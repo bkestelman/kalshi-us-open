@@ -76,6 +76,7 @@ from discovery import Discovery
 from iolib import LIVE as OUT
 from kalshi import (API, WS_HOST, WS_PATH, Book, fee, get, signed, ws_headers)
 from paper_support import PaperLiquidity, atomic_json
+from score_context import context as score_context, future_round
 
 # websockets renamed connect()'s header argument in v14 (extra_headers ->
 # additional_headers), and passing the wrong one is a TypeError on every
@@ -402,6 +403,7 @@ class WinnerTaker:
         self.feed_ready = False
         self.feed_enforced = False  # enabled by run(); synthetic unit books work offline
         self.signal_states = {}
+        self.scores = {}
 
     # ------------------------------------------------------------- logging
     def jlog(self, obj):
@@ -800,6 +802,13 @@ class WinnerTaker:
             return None, "no-book"
         m = mb.mid()
         started = (leg.tour, leg.key) in self.disc.started
+        score = score_context(self.scores, leg.match_tk)
+        if score['state'] == 'won':
+            return None, 'score-confirmed-winner'
+        confirmed = (score['state'] == 'lost'
+                     and future_round(score.get('round'), tk))
+        if score.get('round') and not future_round(score['round'], tk):
+            return None, 'not-future-round'
         # ELIMINATED. When a match ends, the loser's match book goes one-sided
         # -- no bid, an ask at a cent -- so mid() returns None and every leg
         # used to die at `no-match-mid`. That was backwards: it is the moment
@@ -812,8 +821,8 @@ class WinnerTaker:
         # Only meaningful once the match has STARTED -- a pre-match longshot
         # quotes the same shape and has lost nothing.
         m_bid, m_ask = mb.bid(), mb.ask()
-        out = (started and m_bid is None
-               and m_ask is not None and m_ask <= ELIMINATED)
+        out = confirmed or (started and m_bid is None
+                            and m_ask is not None and m_ask <= ELIMINATED)
         if m is None and not out:
             return None, "no-match-mid"
         p, q = wb.bid(), wb.bid_size()
@@ -843,7 +852,9 @@ class WinnerTaker:
                 return None, "no-room"
             return ({"leg": leg, "tk": tk, "p": p, "q": q, "fair": 0.0,
                      "m": m if m is not None else 0.0, "edge": edge,
-                     "roc": snap["roc"], "eliminated": True}, None)
+                     "roc": snap["roc"], "eliminated": True,
+                     "signal": 'score-confirmed' if confirmed else 'book-inferred',
+                     "score": score}, None)
         # A player is not "dying" before a ball has been struck. Without this
         # a first-round longshot quoted at 3c looks exactly like a collapse:
         # the mid is under DYING all day, and only the accident that R needs
@@ -885,7 +896,7 @@ class WinnerTaker:
         if self.room(leg) < (1 - p):
             return None, "no-room"
         return ({"leg": leg, "tk": tk, "p": p, "q": q, "fair": fair, "m": m,
-                 "edge": edge, "roc": roc}, None)
+                 "edge": edge, "roc": roc, "signal": 'model-edge', 'score': score}, None)
 
     def on_book(self, tk):
         """React to one book update. This is the entry path.
@@ -919,6 +930,7 @@ class WinnerTaker:
                 self.jlog({'a': 'signal', 'match_tk': tk, 'previous': old,
                            'signal': state, 'bid': bid, 'ask': ask,
                            'started': any((l.tour, l.key) in self.disc.started for l in legs),
+                           'score': score_context(self.scores, tk),
                            'legs': [{'tk': l.win_tk,
                                      'bid': self.books[l.win_tk].bid(),
                                      'size': self.books[l.win_tk].bid_size(),
@@ -956,6 +968,22 @@ class WinnerTaker:
             await asyncio.sleep(self.cfg["sample_every"])
             try:
                 self.cfg.reload()
+                score_path = os.path.join(OUT, 'tennis_scores.json')
+                if os.path.exists(score_path):
+                    try:
+                        with open(score_path) as f:
+                            previous_scores = self.scores
+                            self.scores = json.load(f).get('matches', {})
+                        for match_tk in list(self.legs_by_match):
+                            before = score_context(previous_scores, match_tk)['state']
+                            after = score_context(self.scores, match_tk)['state']
+                            if before != after:
+                                self.jlog({'a': 'score_state', 'match_tk': match_tk,
+                                           'previous': before,
+                                           'score': score_context(self.scores, match_tk)})
+                                self.on_book(match_tk)
+                    except (ValueError, OSError) as e:
+                        log(f'score cache read error: {e}')
                 self.sample_r()
                 now = time.time()
                 for leg in list(self.legs.values()):
@@ -1093,7 +1121,8 @@ class WinnerTaker:
                    "mmid": round(c["m"], 4), "edge": round(c["edge"], 4),
                    "roc": round(c["roc"], 4), "collateral": round(coll, 2),
                    "r_n": leg.rn, "locked": round(self.locked(), 2),
-                   "elim": elim, "signal": 'book-inferred' if elim else 'model-edge',
+                   "elim": elim, "signal": c.get('signal', 'book-inferred' if elim else 'model-edge'),
+                   "score": c.get('score'),
                    "decision_at": decision_at,
                    "elapsed_ms": round((time.time() - decision_at) * 1000, 3),
                    "fill_model": 'exchange' if self.live else 'delayed-displayed-liquidity-v1'})

@@ -4,11 +4,13 @@ import json
 import os
 import tempfile
 import unittest
+import time
 
 os.environ['KALSHI_DATA'] = tempfile.mkdtemp(prefix='paper-support-test-')
 import winner_taker as W
 from kalshi import Book
 from paper_support import PaperLiquidity
+from score_context import context, future_round
 
 
 class PaperTests(unittest.TestCase):
@@ -79,6 +81,35 @@ class PaperTests(unittest.TestCase):
         b.feed_ready = True
         b.settled_tks.add('T')
         self.assertEqual(b.evaluate(l)[1], 'settled-leg')
+
+    def test_score_identity_freshness_and_future_round(self):
+        matches = {'EVENT': {'players': {'EVENT-A': {'id': 'a'}},
+                            'milestone_id': 'id', 'received_at': 100,
+                            'round': 'Quarterfinals', 'best_of': '5',
+                            'score': {'competitor1_id': 'a', 'competitor2_id': 'b',
+                                      'winner': 'b', 'status': 'closed', 'match_status': 'ended'}}}
+        self.assertEqual(context(matches, 'EVENT-A', 101)['state'], 'lost')
+        self.assertEqual(context(matches, 'EVENT-A', 200)['state'], 'stale')
+        self.assertEqual(context(matches, 'EVENT-B', 101)['state'], 'identity-mismatch')
+        self.assertFalse(future_round('Quarterfinals', 'KXATPADVANCE-26USOQUAR-A'))
+        self.assertTrue(future_round('Quarterfinals', 'KXATPADVANCE-26USOSEMI-A'))
+        self.assertFalse(future_round(None, 'KXATPADVANCE-26USOFIN-A'))
+
+    def test_confirmed_score_needs_no_r_and_winner_vetoes(self):
+        b, l = self.make_bot()
+        l.match_tk = 'EVENT-A'
+        b.books[l.match_tk] = b.books['M']
+        l.rn = 0
+        b.scores = {'EVENT': {'players': {'EVENT-A': {'id': 'a'}},
+                             'milestone_id': 'id', 'received_at': time.time(),
+                             'round': 'Round Of 16', 'score': {
+                                 'competitor1_id': 'a', 'competitor2_id': 'b',
+                                 'winner': 'b', 'status': 'closed', 'match_status': 'ended'}}}
+        c, reason = b.evaluate(l)
+        self.assertIsNone(reason)
+        self.assertEqual(c['signal'], 'score-confirmed')
+        b.scores['EVENT']['score']['winner'] = 'a'
+        self.assertEqual(b.evaluate(l)[1], 'score-confirmed-winner')
 
 
 if __name__ == '__main__':

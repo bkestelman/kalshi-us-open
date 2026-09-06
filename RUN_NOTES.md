@@ -67,3 +67,26 @@ Audit market rules/round joins, feed reconstruction, fee rounding and live order
 accounting. The current inferred-elimination path still uses fair=0 and bypasses
 comeback caps; paper results on that path are **not** evidence of zero risk.
 No live transition is authorized by this run.
+
+## Score feed and manual fills (21:15 UTC)
+
+Found documented `/live_data/milestone/{id}` and `/live_data/batch` endpoints.
+The batch API requires repeated `milestone_ids` parameters; a comma-separated
+string silently returns null. Started independent `tennis-scores.service` at
+two-second polling for unfinished matches and one-minute rechecks for finished
+matches. Full score changes, minus bulky statistics, are journalled with request
+and receive times. Source latency is unknown; receive time does not establish
+score freshness. Match market `custom_strike.tennis_competitor` IDs match the
+score IDs, including Zheng, Kostyuk, Medvedev and Tiafoe.
+
+The bot reads this local cache. A mapped, recently fetched explicit ended/closed
+winner can confirm loss without R, or veto shorting a known winner. Qualification
+rounds already achieved are excluded using score milestone round metadata.
+Unfinished scores are recorded as context, not used as a timing veto yet.
+
+Read-only portfolio inspection confirmed Anisimova FIN NO at 99 cents,
+156.99 contracts, September 5 at 16:48:28.520 UTC. **The Kostyuk-match fills
+were on Noskova QUAR YES**, 206 contracts at 99 cents, September 6 at
+19:15:54.963–19:15:55.092 UTC. This exposes a missing strategy direction:
+buy the winner's newly secured qualification, as well as short the loser's
+future qualifications. The original bot cannot express that direction.

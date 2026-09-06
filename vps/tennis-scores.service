@@ -1,0 +1,16 @@
+[Unit]
+Description=Public tennis score capture for stale-order paper research
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=@USER@
+WorkingDirectory=@HOME@/kalshi-us-open
+ExecStart=/usr/bin/python3 @HOME@/kalshi-us-open/score_collector.py
+Restart=always
+RestartSec=10
+StandardOutput=append:@HOME@/kalshi-us-open/data/live/tennis_scores.log
+StandardError=inherit
+
+[Install]
+WantedBy=multi-user.target
