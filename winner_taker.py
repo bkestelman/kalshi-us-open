@@ -77,6 +77,7 @@ from iolib import LIVE as OUT
 from kalshi import (API, WS_HOST, WS_PATH, Book, fee, get, signed, ws_headers)
 from paper_support import PaperLiquidity, atomic_json
 from score_context import context as score_context, future_round
+from qualifier_paper import QualifierPaper
 
 # websockets renamed connect()'s header argument in v14 (extra_headers ->
 # additional_headers), and passing the wrong one is a TypeError on every
@@ -404,6 +405,8 @@ class WinnerTaker:
         self.feed_enforced = False  # enabled by run(); synthetic unit books work offline
         self.signal_states = {}
         self.scores = {}
+        self.qualifier_paper = None
+        self.last_message_at = 0.0
 
     # ------------------------------------------------------------- logging
     def jlog(self, obj):
@@ -937,6 +940,8 @@ class WinnerTaker:
                                      'decision': self.evaluate(l)[1] or 'candidate'}
                                     for l in legs]})
         for leg in legs:
+            if self.qualifier_paper:
+                self.qualifier_paper.on_leg(leg)
             if leg.win_tk in self.inflight:
                 continue
             c, _reason = self.evaluate(leg)
@@ -1231,6 +1236,8 @@ class WinnerTaker:
         while not self.stop:
             await asyncio.sleep(SETTLE_POLL)
             try:
+                if self.qualifier_paper:
+                    await self.qualifier_paper.settle()
                 for tk, pos in list(self.pos.items()):
                     d = await loop.run_in_executor(
                         self.pool, get, f"/markets/{tk}")
@@ -1263,6 +1270,8 @@ class WinnerTaker:
         # keep held legs subscribed even after their match group ages out, so
         # marks and covers have a live book to read
         out |= set(self.pos)
+        if self.qualifier_paper:
+            out |= set(self.qualifier_paper.positions)
         return sorted(out)
 
     def _make_leg(self, tour, key, comp, code, d, win_tk, win_ev):
@@ -1398,6 +1407,7 @@ class WinnerTaker:
                         except asyncio.TimeoutError:
                             continue
                         self.msgs += 1
+                        self.last_message_at = time.time()
                         try:
                             msg = json.loads(raw)
                         except ValueError:
@@ -1430,6 +1440,8 @@ class WinnerTaker:
                             if not self.live:
                                 self.paper_liquidity.delta(tk, m, b)
                         self.feed_ready = snapshots.issuperset(tks)
+                        if self.qualifier_paper:
+                            self.qualifier_paper.book_update(tk, m, b, typ == 'orderbook_snapshot')
                         # The entry path. Not a timer -- see on_book().
                         self.on_book(tk)
             except Exception as e:
@@ -1441,16 +1453,29 @@ class WinnerTaker:
         while not self.stop:
             await asyncio.sleep(STATUS_EVERY)
             r = sum(1 for l in self.legs.values() if l.rn >= MIN_R)
+            q = self.qualifier_paper
+            atomic_json(os.path.join(OUT, 'winner_taker_health.json'), {
+                'updated_at': time.time(), 'pid': os.getpid(), 'mode': 'live' if self.live else 'paper',
+                'feed_ready': self.feed_ready, 'last_message_at': self.last_message_at,
+                'messages': self.msgs, 'matches': len(self.groups), 'legs': len(self.legs),
+                'takes': self.takes, 'locked': self.locked(), 'realized': self.realized,
+                'qualifier_takes': q.takes if q else 0,
+                'qualifier_locked': sum(p['cost'] for p in q.positions.values()) if q else 0,
+                'qualifier_realized': q.realized if q else 0})
             # The discovery note matters most when nothing is in play: without
             # it a quiet bot and a broken bot log exactly the same thing.
             log(f"status: [{self.disc.note}] {len(self.groups)} matches, "
                 f"{len(self.legs)} legs "
                 f"({r} with R), {self.msgs:,} msgs, {self.takes} takes, "
                 f"${self.locked():,.2f}/{self.cfg['hard_cap']:,.0f} locked, "
-                f"realized ${self.realized:+,.2f}")
+                f"realized ${self.realized:+,.2f}, feed_ready={self.feed_ready}, "
+                f"qualifier takes={q.takes if q else 0} "
+                f"realized=${q.realized if q else 0:+.2f}")
 
     async def run(self):
         self.feed_enforced = True
+        if not self.live:
+            self.qualifier_paper = QualifierPaper(self, OUT)
         log(f"winner_taker starting ({'LIVE' if self.live else 'paper'}), "
             f"cap ${self.cfg['hard_cap']:,.0f}, per-leg "
             f"${self.cfg['per_leg_cap']:,.0f}, per-event "

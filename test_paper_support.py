@@ -11,6 +11,7 @@ import winner_taker as W
 from kalshi import Book
 from paper_support import PaperLiquidity
 from score_context import context, future_round
+from qualifier_paper import QualifierPaper, secured_ticker
 
 
 class PaperTests(unittest.TestCase):
@@ -110,6 +111,36 @@ class PaperTests(unittest.TestCase):
         self.assertEqual(c['signal'], 'score-confirmed')
         b.scores['EVENT']['score']['winner'] = 'a'
         self.assertEqual(b.evaluate(l)[1], 'score-confirmed-winner')
+
+    def test_winner_only_buys_newly_secured_round(self):
+        self.assertTrue(secured_ticker('Round Of 16', 'KXWTAADVANCE-26USOQUAR-NOS'))
+        self.assertFalse(secured_ticker('Round Of 16', 'KXWTAADVANCE-26USOFIN-NOS'))
+        self.assertFalse(secured_ticker('Round Of 16', 'KXWTA-26USO-NOS'))
+        self.assertTrue(secured_ticker('Final', 'KXWTA-26USO-NOS'))
+
+    def test_winner_fill_consumes_asks_and_restores(self):
+        b, l = self.make_bot()
+        l.match_tk, l.win_tk = 'EVENT-A', 'KXATP-26TEST-A'
+        b.books[l.match_tk] = b.books['M']
+        b.books[l.win_tk].snapshot({'yes_dollars_fp': [['.98', '500']],
+                                   'no_dollars_fp': [['.01', '206']]}, 1)
+        b.feed_ready = True
+        b.scores = {'EVENT': {'players': {'EVENT-A': {'id': 'a'}},
+                             'milestone_id': 'id', 'received_at': time.time(),
+                             'round': 'Final', 'score': {
+                                 'competitor1_id': 'a', 'competitor2_id': 'b',
+                                 'winner': 'a', 'status': 'closed', 'match_status': 'ended'}}}
+        directory = tempfile.mkdtemp(prefix='qualifier-test-')
+        q = QualifierPaper(b, directory)
+        q.book_update(l.win_tk, {}, b.books[l.win_tk], True)
+        c = q.candidate(l)
+        self.assertEqual(c['count'], 206)
+        asyncio.run(q.take(c))
+        self.assertEqual(q.positions[l.win_tk]['count'], 206)
+        self.assertAlmostEqual(q.positions[l.win_tk]['cost'], 204.09)
+        self.assertIsNone(q.candidate(l))
+        restored = QualifierPaper(b, directory)
+        self.assertEqual(restored.positions, q.positions)
 
 
 if __name__ == '__main__':

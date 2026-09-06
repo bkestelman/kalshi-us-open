@@ -90,3 +90,16 @@ were on Noskova QUAR YES**, 206 contracts at 99 cents, September 6 at
 19:15:54.963–19:15:55.092 UTC. This exposes a missing strategy direction:
 buy the winner's newly secured qualification, as well as short the loser's
 future qualifications. The original bot cannot express that direction.
+
+## Winner-side paper account
+
+Added a paper-only YES taker sharing the same websocket and local score cache.
+It targets QUAR after Round Of 16, SEMI after Quarterfinals, FIN after
+Semifinals, and WIN after the Final. It accepts an explicit mapped score win,
+or a started match with bid >=99 cents and no ask. Inference is still risky.
+Its separate research account has $500 total and $125 per-player inferred
+exposure. These are independent of the original short-side $500 account, not
+a claim that combined exposure is $500. Live mode never instantiates it.
+Fees are rounded up to cents per winner-side simulated order. Positions and
+remaining ask quantities are durable. Nine focused tests now cover latency,
+depth consumption, restart, score identity, round eligibility and YES fills.
