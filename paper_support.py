@@ -3,6 +3,21 @@ import json
 import os
 
 
+def rest_quantity(market_response, orderbook_response, side, price):
+    """Conservative executable-depth check for paper, using public responses."""
+    market = (market_response or {}).get('market') or {}
+    if market.get('status') != 'active' or market.get('result'):
+        return 0.0, 'market-not-active'
+    book = (orderbook_response or {}).get('orderbook_fp')
+    if not isinstance(book, dict):
+        return 0.0, 'missing-rest-book'
+    levels = book.get(side + '_dollars')
+    if not isinstance(levels, list):
+        return 0.0, 'missing-rest-side'
+    q = sum(float(q) for p, q in levels if abs(float(p) - price) < 1e-8)
+    return max(0.0, q), 'verified' if q > 0 else 'rest-price-absent'
+
+
 class PaperLiquidity:
     """Never fill the same displayed quantity twice.
 

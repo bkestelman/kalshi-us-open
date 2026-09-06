@@ -75,7 +75,7 @@ import websockets
 from discovery import Discovery
 from iolib import LIVE as OUT
 from kalshi import (API, WS_HOST, WS_PATH, Book, fee, get, signed, ws_headers)
-from paper_support import PaperLiquidity, atomic_json
+from paper_support import PaperLiquidity, atomic_json, rest_quantity
 from score_context import context as score_context, future_round
 from qualifier_paper import QualifierPaper
 
@@ -181,6 +181,7 @@ DEFAULTS = {
     "max_price": 0.15,          # richer than this is a contender, not a longshot
     "max_take": 500,            # contracts per order
     "paper_latency_ms": 100.0,  # decision to simulated arrival; measured separately
+    "paper_verify_rest": True, # reject frozen/closed books and validate displayed depth
     # Housekeeping only -- R sampling, config reload, the observation log.
     # Entries are NOT on a timer: they fire on the book update that creates
     # them, because alloc_study measured every delay as a straight loss.
@@ -407,6 +408,7 @@ class WinnerTaker:
         self.scores = {}
         self.qualifier_paper = None
         self.last_message_at = 0.0
+        self.paper_retry_after = {}
 
     # ------------------------------------------------------------- logging
     def jlog(self, obj):
@@ -800,6 +802,8 @@ class WinnerTaker:
             return None, "feed-not-ready"
         if tk in self.settled_tks:
             return None, "settled-leg"
+        if not self.live and time.time() < self.paper_retry_after.get(tk, 0):
+            return None, 'paper-verification-cooldown'
         wb, mb = self.books.get(tk), self.books.get(leg.match_tk)
         if wb is None or mb is None:
             return None, "no-book"
@@ -1082,10 +1086,11 @@ class WinnerTaker:
                 filled = float(o.get("fill_count_fp") or o.get("fill_count") or 0)
             else:
                 await asyncio.sleep(max(0.0, self.cfg['paper_latency_ms']) / 1000.0)
+                verified, verification = await self.verify_paper_depth(tk, 'yes', p)
                 wb = self.books.get(tk)
                 displayed = wb.yes.get(p, 0.0) if wb else 0.0
                 available = self.paper_liquidity.available(tk, p, displayed)
-                filled = min(n, int(available)) if (
+                filled = min(n, int(available), int(verified)) if (
                     not self.feed_enforced or self.feed_ready) else 0
                 self.paper_liquidity.consume(tk, p, filled, displayed)
         finally:
@@ -1094,6 +1099,7 @@ class WinnerTaker:
             self.jlog({"a": "no_fill", "tk": tk, "price": p, "count": n,
                        "edge": round(c["edge"], 4), "roc": round(c["roc"], 4),
                        "decision_at": decision_at,
+                       "verification": verification if not self.live else None,
                        "elapsed_ms": round((time.time() - decision_at) * 1000, 3)})
             return
         coll = filled * unit
@@ -1128,9 +1134,10 @@ class WinnerTaker:
                    "r_n": leg.rn, "locked": round(self.locked(), 2),
                    "elim": elim, "signal": c.get('signal', 'book-inferred' if elim else 'model-edge'),
                    "score": c.get('score'),
+                   "verification": verification if not self.live else None,
                    "decision_at": decision_at,
                    "elapsed_ms": round((time.time() - decision_at) * 1000, 3),
-                   "fill_model": 'exchange' if self.live else 'delayed-displayed-liquidity-v1'})
+                   "fill_model": 'exchange' if self.live else 'delayed-rest-verified-v2'})
         self.save_paper_account()
         log(f"TAKE {leg.comp} {leg.code} SELL {filled:.0f} {tk} @{p:.2f} "
             f"(fair {c['fair']:.3f}, M {c['m']:.3f}, edge {100*c['edge']:.1f}c, "
@@ -1138,6 +1145,23 @@ class WinnerTaker:
             f"${self.locked():.2f} total)")
 
     # ------------------------------------------------------------- watching
+    async def verify_paper_depth(self, ticker, side, price):
+        if not self.feed_enforced or not self.cfg['paper_verify_rest']:
+            return 10**12, {'status': 'disabled'}
+        started = time.time()
+        try:
+            loop = asyncio.get_running_loop()
+            market, book = await asyncio.gather(
+                loop.run_in_executor(self.pool, get, '/markets/' + ticker),
+                loop.run_in_executor(self.pool, get, '/markets/' + ticker + '/orderbook'))
+            quantity, why = rest_quantity(market, book, side, price)
+        except Exception as e:
+            quantity, why = 0, f'error:{type(e).__name__}'
+        if quantity < 1:
+            self.paper_retry_after[ticker] = time.time() + 1
+        return quantity, {'status': why, 'requested_at': started,
+                          'received_at': time.time(), 'quantity': quantity}
+
     async def mark_loop(self):
         """Log every position's mark when its match resolves.
 

@@ -58,6 +58,8 @@ class QualifierPaper:
         owner, tk = self.owner, leg.win_tk
         if not owner.feed_ready or tk in self.settled or tk in self.pending:
             return None
+        if time.time() < owner.paper_retry_after.get(tk, 0):
+            return None
         score = context(owner.scores, leg.match_tk)
         if not secured_ticker(score.get('round'), tk) or score['state'] == 'lost':
             return None
@@ -101,12 +103,13 @@ class QualifierPaper:
         tk, p, no_p = leg.win_tk, c['price'], c['no_price']
         try:
             await asyncio.sleep(max(0, owner.cfg['paper_latency_ms']) / 1000)
+            verified, verification = await owner.verify_paper_depth(tk, 'no', no_p)
             wb = owner.books.get(tk)
             displayed = wb.no.get(no_p, 0) if wb and owner.feed_ready else 0
-            n = min(c['count'], int(self.liquidity.available(tk, no_p, displayed)))
+            n = min(c['count'], int(verified), int(self.liquidity.available(tk, no_p, displayed)))
             if n < 1:
                 owner.jlog({'a': 'qualifier_no_fill', 'tk': tk, 'price': p,
-                            'decision_at': c['decision_at']})
+                            'decision_at': c['decision_at'], 'verification': verification})
                 return
             self.liquidity.consume(tk, no_p, n, displayed)
             cost = n * p + math.ceil(n * fee(p) * 100 - 1e-9) / 100
@@ -121,7 +124,8 @@ class QualifierPaper:
                         'signal': c['signal'], 'score': c['score'],
                         'decision_at': c['decision_at'],
                         'elapsed_ms': (time.time() - c['decision_at']) * 1000,
-                        'account': 'qualifier-paper-500', 'fill_model': 'delayed-displayed-liquidity-v1'})
+                        'account': 'qualifier-paper-500', 'verification': verification,
+                        'fill_model': 'delayed-rest-verified-v2'})
         except Exception as e:
             owner.jlog({'a': 'qualifier_error', 'error': str(e)})
             owner.stop = True

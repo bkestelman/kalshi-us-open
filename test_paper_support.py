@@ -9,7 +9,7 @@ import time
 os.environ['KALSHI_DATA'] = tempfile.mkdtemp(prefix='paper-support-test-')
 import winner_taker as W
 from kalshi import Book
-from paper_support import PaperLiquidity
+from paper_support import PaperLiquidity, rest_quantity
 from score_context import context, future_round
 from qualifier_paper import QualifierPaper, secured_ticker
 
@@ -33,7 +33,7 @@ class PaperTests(unittest.TestCase):
     def make_bot(self):
         b = W.WinnerTaker(False)
         b.cfg.v.update(hard_cap=500, per_leg_cap=500, per_event_cap=500,
-                       per_day_cap=500, paper_latency_ms=20)
+                       per_day_cap=500, paper_latency_ms=20, paper_verify_rest=False)
         l = W.Leg('ATP', 'MATCH', 'Tournament', 'A', 'M', 'T', 'E', 'Player A')
         b.legs['T'] = l
         b.disc.started.add(('ATP', 'MATCH'))
@@ -117,6 +117,16 @@ class PaperTests(unittest.TestCase):
         self.assertFalse(secured_ticker('Round Of 16', 'KXWTAADVANCE-26USOFIN-NOS'))
         self.assertFalse(secured_ticker('Round Of 16', 'KXWTA-26USO-NOS'))
         self.assertTrue(secured_ticker('Final', 'KXWTA-26USO-NOS'))
+
+    def test_rest_verification_rejects_closed_and_absent_liquidity(self):
+        market = {'market': {'status': 'active', 'result': ''}}
+        book = {'orderbook_fp': {'yes_dollars': [['.01', '123.45']],
+                                  'no_dollars': [['.01', '206']]}}
+        self.assertEqual(rest_quantity(market, book, 'yes', .01), (123.45, 'verified'))
+        self.assertEqual(rest_quantity(market, book, 'no', .01), (206, 'verified'))
+        self.assertEqual(rest_quantity(market, book, 'yes', .02)[0], 0)
+        self.assertEqual(rest_quantity({'market': {'status': 'closed'}}, book, 'yes', .01)[0], 0)
+        self.assertEqual(rest_quantity(market, {}, 'yes', .01)[0], 0)
 
     def test_winner_fill_consumes_asks_and_restores(self):
         b, l = self.make_bot()

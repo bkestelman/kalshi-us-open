@@ -129,3 +129,23 @@ At 21:23, Pegula SEMI was listed and correctly matched by a fresh discovery
 instance but was absent from the running bot's three Pegula legs. Added a
 refresh path that adds newly available legs while preserving existing R and
 match identity. Existing matches are not re-announced as newly discovered.
+
+## Execution verification
+
+Added public REST checks after the configured paper delay, in parallel for
+market status and orderbook. A paper fill requires an active, unresolved
+market and quantity at the exact limit in both the current websocket book and
+the independently fetched REST book, limited by remaining simulated depth.
+Errors or absent depth produce no fill and a one-second retry cooldown.
+This is deliberately conservative: the extra REST request is **paper
+validation latency**, not a proposed synchronous check on the live order path.
+Action records carry its request/receive timestamps and quantity.
+
+Series endpoints currently report quadratic fees with multiplier 1 for ATP,
+WTA and both ADVANCE series. Official fee rounding documentation distinguishes
+direct-member $0.0001 balance precision from non-direct-member cents. The
+manual 200-contract Noskova fill paid $0.138600; its subsequent 5- and
+1-contract fills paid zero (do not assume all manual fills are taker fills).
+Winner-side paper currently rounds fees conservatively to whole cents;
+short-side uses the original unrounded model. Harmonizing this remains before
+live readiness, though the monetary discrepancy is below a cent per order.
