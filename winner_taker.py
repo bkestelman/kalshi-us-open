@@ -75,6 +75,7 @@ import websockets
 from discovery import Discovery
 from iolib import LIVE as OUT
 from kalshi import (API, WS_HOST, WS_PATH, Book, fee, get, signed, ws_headers)
+from paper_support import PaperLiquidity, atomic_json
 
 # websockets renamed connect()'s header argument in v14 (extra_headers ->
 # additional_headers), and passing the wrong one is a TypeError on every
@@ -177,6 +178,7 @@ DEFAULTS = {
     "min_edge": 0.01,           # one tick; below this is rounding
     "max_price": 0.15,          # richer than this is a contender, not a longshot
     "max_take": 500,            # contracts per order
+    "paper_latency_ms": 100.0,  # decision to simulated arrival; measured separately
     # Housekeeping only -- R sampling, config reload, the observation log.
     # Entries are NOT on a timer: they fire on the book update that creates
     # them, because alloc_study measured every delay as a straight loss.
@@ -396,6 +398,10 @@ class WinnerTaker:
         self.takes = 0
         self.realized = 0.0
         self.recent = deque(maxlen=20)
+        self.paper_liquidity = PaperLiquidity()
+        self.feed_ready = False
+        self.feed_enforced = False  # enabled by run(); synthetic unit books work offline
+        self.signal_states = {}
 
     # ------------------------------------------------------------- logging
     def jlog(self, obj):
@@ -500,7 +506,26 @@ class WinnerTaker:
         about ours.
         """
         if not self.live:
-            log("restore: paper mode, starting flat")
+            path = os.path.join(OUT, "winner_taker_paper_account.json")
+            if os.path.exists(path):
+                try:
+                    with open(path) as f:
+                        state = json.load(f)
+                    if state['version'] != 1:
+                        raise ValueError('unsupported paper account version')
+                    self.pos = state['positions']
+                    self.by_day.update(state['by_day'])
+                    self.realized = state['realized']
+                    self.takes = state['takes']
+                    self.settled_tks = set(state['settled_tks'])
+                    self.paper_liquidity = PaperLiquidity(state['liquidity'])
+                    log(f"restore: paper account {len(self.pos)} positions, "
+                        f"${self.locked():.2f} locked, ${self.realized:+.2f} realized")
+                except Exception as e:
+                    log(f"restore: invalid paper account ({e}); REFUSING to start flat")
+                    self.stop = True
+            else:
+                log("restore: new durable paper account; legacy fills excluded")
             return
         orders, cursor = [], None
         for _ in range(100):
@@ -661,6 +686,14 @@ class WinnerTaker:
             await asyncio.sleep(STATE_EVERY)
             self.save_state()
 
+    def save_paper_account(self):
+        if not self.live and self.feed_enforced:
+            atomic_json(os.path.join(OUT, 'winner_taker_paper_account.json'), {
+                'version': 1, 'updated_at': time.time(), 'positions': self.pos,
+                'by_day': dict(self.by_day), 'realized': self.realized,
+                'takes': self.takes, 'settled_tks': sorted(self.settled_tks),
+                'liquidity': self.paper_liquidity.levels})
+
     def balance(self):
         st, d = signed("GET", f"{API}/portfolio/balance")
         if st != 200 or not isinstance(d, dict):
@@ -729,6 +762,8 @@ class WinnerTaker:
         makes R a median over SECONDS of quoting, where per-update sampling
         could reach MIN_R in a single burst.
         """
+        if self.feed_enforced and not self.feed_ready:
+            return
         for tk, leg in self.legs.items():
             # Frozen. Not "stop when the mid gets low" -- stop when the match
             # begins, which is a fact about the world rather than a threshold.
@@ -756,6 +791,10 @@ class WinnerTaker:
         different findings about whether this strategy still exists.
         """
         tk = leg.win_tk
+        if self.feed_enforced and not self.feed_ready:
+            return None, "feed-not-ready"
+        if tk in self.settled_tks:
+            return None, "settled-leg"
         wb, mb = self.books.get(tk), self.books.get(leg.match_tk)
         if wb is None or mb is None:
             return None, "no-book"
@@ -778,6 +817,10 @@ class WinnerTaker:
         if m is None and not out:
             return None, "no-match-mid"
         p, q = wb.bid(), wb.bid_size()
+        if not self.live and p is not None:
+            q = self.paper_liquidity.available(tk, p, q)
+            if q < 1 and wb.bid_size() >= 1:
+                return None, "paper-depth-consumed"
         snap = {"m": m, "p": p, "q": q, "ask": wb.ask(), "fair": None,
                 "edge": None, "roc": None}
         if out:
@@ -864,11 +907,29 @@ class WinnerTaker:
         if tk in self.legs:
             legs.append(self.legs[tk])
         legs.extend(self.legs_by_match.get(tk, ()))
+        if tk in self.legs_by_match and self.feed_ready:
+            mb = self.books.get(tk)
+            bid, ask = mb.bid(), mb.ask()
+            state = ('one-cent' if bid is None and ask is not None and ask <= .01
+                     else 'two-cent' if bid is None and ask is not None and ask <= .02
+                     else 'other')
+            old = self.signal_states.get(tk, 'other')
+            if state != old:
+                self.signal_states[tk] = state
+                self.jlog({'a': 'signal', 'match_tk': tk, 'previous': old,
+                           'signal': state, 'bid': bid, 'ask': ask,
+                           'started': any((l.tour, l.key) in self.disc.started for l in legs),
+                           'legs': [{'tk': l.win_tk,
+                                     'bid': self.books[l.win_tk].bid(),
+                                     'size': self.books[l.win_tk].bid_size(),
+                                     'decision': self.evaluate(l)[1] or 'candidate'}
+                                    for l in legs]})
         for leg in legs:
             if leg.win_tk in self.inflight:
                 continue
             c, _reason = self.evaluate(leg)
             if c:
+                c['decision_at'] = time.time()
                 self.inflight.add(leg.win_tk)
                 asyncio.ensure_future(self._take_and_clear(c))
 
@@ -877,6 +938,10 @@ class WinnerTaker:
             await self.take(c)
         except Exception as e:
             log(f"take error {c['tk']}: {type(e).__name__} {e}")
+            if not self.live:
+                # A failed durable account write must not be followed by
+                # further fills against an uncertain checkpoint.
+                self.stop = True
         finally:
             self.inflight.discard(c["tk"])
 
@@ -931,6 +996,7 @@ class WinnerTaker:
         rejected.
         """
         leg, tk, p, q = c["leg"], c["tk"], c["p"], c["q"]
+        decision_at = c.get('decision_at', time.time())
         elim = bool(c.get("eliminated"))
         unit = 1 - p
         room = self.room(leg, elim)
@@ -982,15 +1048,20 @@ class WinnerTaker:
                 o = resp.get("order", resp)
                 filled = float(o.get("fill_count_fp") or o.get("fill_count") or 0)
             else:
-                # Report the full size in paper so the caps bind exactly as
-                # they would live; a dry run that "fills" nothing never tests
-                # them.
-                filled = n
+                await asyncio.sleep(max(0.0, self.cfg['paper_latency_ms']) / 1000.0)
+                wb = self.books.get(tk)
+                displayed = wb.yes.get(p, 0.0) if wb else 0.0
+                available = self.paper_liquidity.available(tk, p, displayed)
+                filled = min(n, int(available)) if (
+                    not self.feed_enforced or self.feed_ready) else 0
+                self.paper_liquidity.consume(tk, p, filled, displayed)
         finally:
             self.pending.pop(rid, None)
         if filled < 1:
             self.jlog({"a": "no_fill", "tk": tk, "price": p, "count": n,
-                       "edge": round(c["edge"], 4), "roc": round(c["roc"], 4)})
+                       "edge": round(c["edge"], 4), "roc": round(c["roc"], 4),
+                       "decision_at": decision_at,
+                       "elapsed_ms": round((time.time() - decision_at) * 1000, 3)})
             return
         coll = filled * unit
         pos = self.pos.setdefault(tk, {"count": 0.0, "collateral": 0.0,
@@ -1022,7 +1093,11 @@ class WinnerTaker:
                    "mmid": round(c["m"], 4), "edge": round(c["edge"], 4),
                    "roc": round(c["roc"], 4), "collateral": round(coll, 2),
                    "r_n": leg.rn, "locked": round(self.locked(), 2),
-                   "elim": elim})
+                   "elim": elim, "signal": 'book-inferred' if elim else 'model-edge',
+                   "decision_at": decision_at,
+                   "elapsed_ms": round((time.time() - decision_at) * 1000, 3),
+                   "fill_model": 'exchange' if self.live else 'delayed-displayed-liquidity-v1'})
+        self.save_paper_account()
         log(f"TAKE {leg.comp} {leg.code} SELL {filled:.0f} {tk} @{p:.2f} "
             f"(fair {c['fair']:.3f}, M {c['m']:.3f}, edge {100*c['edge']:.1f}c, "
             f"ROC {100*c['roc']:.1f}%, ${coll:.2f} locked, "
@@ -1140,6 +1215,7 @@ class WinnerTaker:
                     self.realized += realized
                     self.settled_tks.add(tk)
                     self.pos.pop(tk, None)
+                    self.save_paper_account()
                     self.jlog({"a": "settle", "tk": tk, "result": res,
                                "count": pos["count"],
                                "realized": round(realized, 2),
@@ -1271,6 +1347,10 @@ class WinnerTaker:
                     pass
                 continue
             try:
+                self.feed_ready = False
+                self.books.clear()
+                snapshots = set()
+                sequences = {}
                 async with websockets.connect(
                         WS_HOST + WS_PATH, ping_interval=10, ping_timeout=30,
                         **{_HDR: ws_headers()}) as ws:
@@ -1300,15 +1380,31 @@ class WinnerTaker:
                         tk = m.get("market_ticker")
                         if not tk:
                             continue
+                        sid, seq = msg.get('sid'), msg.get('seq')
+                        if sid is None or not isinstance(seq, int):
+                            raise ValueError('book message missing sid/seq')
+                        previous = sequences.get(sid)
+                        if previous is not None and seq != previous + 1:
+                            raise ValueError(f'book sequence gap {sid}: {previous}->{seq}')
+                        sequences[sid] = seq
                         t = time.time()
                         b = self.books[tk]
                         if typ == "orderbook_snapshot":
                             b.snapshot(m, t)
+                            snapshots.add(tk)
+                            if not self.live:
+                                self.paper_liquidity.snapshot(tk, b)
                         else:
+                            if tk not in snapshots:
+                                raise ValueError(f'delta before snapshot: {tk}')
                             b.delta(m, t)
+                            if not self.live:
+                                self.paper_liquidity.delta(tk, m, b)
+                        self.feed_ready = snapshots.issuperset(tks)
                         # The entry path. Not a timer -- see on_book().
                         self.on_book(tk)
             except Exception as e:
+                self.feed_ready = False
                 log(f"ws error: {type(e).__name__} {str(e)[:200]}; retry in 5s")
                 await asyncio.sleep(5)
 
@@ -1325,6 +1421,7 @@ class WinnerTaker:
                 f"realized ${self.realized:+,.2f}")
 
     async def run(self):
+        self.feed_enforced = True
         log(f"winner_taker starting ({'LIVE' if self.live else 'paper'}), "
             f"cap ${self.cfg['hard_cap']:,.0f}, per-leg "
             f"${self.cfg['per_leg_cap']:,.0f}, per-event "

@@ -13,3 +13,4 @@ __pycache__/
 # Local interpreter matching the VPS. Recreate with:
 #   uv venv --python 3.14.4 .venv && uv pip install -r requirements.txt
 .venv/
+DEPLOYED_SHA
