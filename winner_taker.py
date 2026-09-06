@@ -1334,6 +1334,21 @@ class WinnerTaker:
                         + " ".join(l.win_tk for l in ls) + ")"
                         for who, ls in byplayer.items()))
                     changed = True
+                # Related markets can be listed after the match was first
+                # discovered. Refresh additions without replacing existing R
+                # or changing the current match identity of a watched leg.
+                for tour, key, comp, players in self.disc.refreshed:
+                    group = self.groups.get((tour, key))
+                    if not group:
+                        continue
+                    for code, d in players.items():
+                        for win_tk, win_ev in d['legs']:
+                            if win_tk in self.legs:
+                                continue
+                            leg = self._make_leg(tour, key, comp, code, d, win_tk, win_ev)
+                            group['legs'].append(leg)
+                            log(f'ADDED LEG {leg.name}: {win_tk} for {leg.match_tk}')
+                            changed = True
                 # ...and IN PLAY when the exchange says a ball has been
                 # struck, which is the line that counts matches actually
                 # played AND the moment R stops moving. Print what it froze

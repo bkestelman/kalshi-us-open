@@ -110,3 +110,22 @@ fills on either research account. `paper-monitor.timer` now records health and
 durable totals each minute. The first monitor sample preceded the bot's first
 two-minute heartbeat and correctly reported missing heartbeat; the following
 sample was healthy. Score collector snapshot age was below two seconds.
+
+## Sequence-validated historical replay and discovery refresh
+
+Replayed 31,286,068 September 5 book messages with per-subscription sequence
+checks. Reset reconstructed books across 34 reconnects/gaps and require fresh
+snapshots. Zheng's 1-cent false signal survives this check, including a fresh
+snapshot mid-episode. It was not merely a missed-delta artifact.
+
+Anisimova's valid no-bid/1-cent state began at epoch 1788626888.918
+(16:48:08.918 UTC), **19.602 seconds before the user's manual FIN NO fill**.
+That is an observed executable opportunity after the market signal, not a
+claim that every size was executable at the first timestamp. Raw audit output:
+`data/research/validated_signal_episodes.json`; reproduce with `replay_signals.py`.
+
+Discovery skipped matching related legs for matches already being watched.
+At 21:23, Pegula SEMI was listed and correctly matched by a fresh discovery
+instance but was absent from the running bot's three Pegula legs. Added a
+refresh path that adds newly available legs while preserving existing R and
+match identity. Existing matches are not re-announced as newly discovered.

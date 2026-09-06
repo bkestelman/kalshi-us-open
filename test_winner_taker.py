@@ -933,6 +933,15 @@ newly, _ = s.step({"26SEP02AUGKHA": 100_000.0 + 68_973.0})
 check("a match played a day after its nominal expiry is still caught",
       "26SEP02AUGKHA" in newly)
 
+print("\nrefresh related markets for an already watched match")
+s = FakeScan()
+s.step({"26XXX00": 1000.0})
+s.step({"26XXX00": 10000.0})
+newly, _ = s.step({"26XXX00": 20000.0})
+check("existing matches are not announced as newly discovered", not newly)
+check("existing match pairs are refreshed for newly listed legs",
+      any(row[1] == "26XXX00" for row in s.d.refreshed))
+
 print()
 if FAILED:
     print(f"{len(FAILED)} FAILED: {FAILED}")

@@ -415,6 +415,7 @@ class Discovery:
                 trading quietly for one scan.
         """
         newly, alive = [], set()
+        self.refreshed = []
         open_gks, confirmed = set(), set()
         scanned = live = 0
         now = time.time()
@@ -468,7 +469,6 @@ class Discovery:
                 watch = due or gk in self.started or (start is None and hot)
                 if gk in live_keys:
                     alive.add(gk)
-                    continue
                 if not watch:
                     continue
                 comp = comps.get(ev)
@@ -495,7 +495,10 @@ class Discovery:
                 players = {c: {"match": codes[c], "legs": ls,
                                "name": names.get(c, "")}
                            for c, ls in legs.items()}
-                newly.append((tour, key, comp, players))
+                if gk in live_keys:
+                    self.refreshed.append((tour, key, comp, players))
+                else:
+                    newly.append((tour, key, comp, players))
         self.closed = {gk for gk in live_keys
                        if gk[0] in confirmed and gk not in open_gks}
         # Bound the baselines by the open list. `confirmed` guards the case
