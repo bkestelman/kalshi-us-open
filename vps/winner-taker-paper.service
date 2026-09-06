@@ -1,0 +1,19 @@
+[Unit]
+Description=winner_taker, PAPER (decides and logs, places nothing)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=@USER@
+WorkingDirectory=@HOME@/kalshi-us-open
+ExecStart=/usr/bin/python3 @HOME@/kalshi-us-open/winner_taker.py paper
+# Paper can come straight back: it holds nothing, risks nothing, and the cost
+# of it being down is a hole in the observation log -- which is the entire
+# reason it is running.
+Restart=always
+RestartSec=10
+StandardOutput=append:@HOME@/kalshi-us-open/data/live/stdout_paper.log
+StandardError=inherit
+
+[Install]
+WantedBy=multi-user.target

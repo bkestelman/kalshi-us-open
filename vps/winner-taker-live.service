@@ -1,0 +1,23 @@
+[Unit]
+Description=winner_taker, LIVE (places real IoC sells)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=@USER@
+WorkingDirectory=@HOME@/kalshi-us-open
+ExecStart=/usr/bin/python3 @HOME@/kalshi-us-open/winner_taker.py live
+# Same rule as the maker next door, for a simpler reason than the maker's: a
+# crash here is a BUG, and restarting a bug just reproduces it. The cost of
+# staying down is missed opportunity, which is bounded and cheap; the cost of
+# looping through a bug that touches orders is not. It rests nothing -- every
+# order is IoC -- so a dead process leaves no working orders behind and there
+# is nothing that needs a supervisor to clean up.
+Restart=no
+KillSignal=SIGTERM
+TimeoutStopSec=30
+StandardOutput=append:@HOME@/kalshi-us-open/data/live/stdout_live.log
+StandardError=inherit
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,5 @@
+# Pinned to what the VPS runs (checked 2026-08-26: Python 3.14.4). The bot is
+# deployed there, so the laptop develops against the same versions -- the
+# alternative is finding out about an API change from a live trading process.
+websockets==17.0.1
+cryptography==46.0.5

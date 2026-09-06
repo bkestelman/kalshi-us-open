@@ -1,0 +1,15 @@
+# Secrets. These are shipped to the box by vps/deploy.sh over ssh, never by
+# git -- a key in a repo is a key in every clone and every backup of it.
+*.rsa
+trade_api_id.txt
+read_only_key_id
+
+# Capture, logs, state. tourn_map.json is a rebuildable API dump; the ws
+# capture is gigabytes a day.
+data/
+__pycache__/
+*.pyc
+
+# Local interpreter matching the VPS. Recreate with:
+#   uv venv --python 3.14.4 .venv && uv pip install -r requirements.txt
+.venv/
