@@ -103,3 +103,10 @@ a claim that combined exposure is $500. Live mode never instantiates it.
 Fees are rounded up to cents per winner-side simulated order. Positions and
 remaining ask quantities are durable. Nine focused tests now cover latency,
 depth consumption, restart, score identity, round eligibility and YES fills.
+
+Restarted onto `6c18c80` at 21:19:46 UTC. At 21:21:46: feed synchronized,
+3 watched matches / 17 related legs, 3,744 messages since restart, zero new
+fills on either research account. `paper-monitor.timer` now records health and
+durable totals each minute. The first monitor sample preceded the bot's first
+two-minute heartbeat and correctly reported missing heartbeat; the following
+sample was healthy. Score collector snapshot age was below two seconds.

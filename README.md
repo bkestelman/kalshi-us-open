@@ -1,5 +1,18 @@
 # kalshi-us-open
 
+Current supervised paper run: [RUN_NOTES.md](RUN_NOTES.md). As of September 6,
+the simulator models order delay and consumed depth, checkpoints paper accounts,
+and uses an independent score collector. A second, **paper-only** account buys
+the winner's newly secured qualification (e.g. Noskova QUAR YES), alongside the
+original loser shorts. Each research account has its own budget; their results
+must not be combined as though they share one capital cap.
+
+Run `python3 paper_report.py` for current health and account totals.
+`tennis-scores.service` collects score changes; `paper-monitor.timer` records
+health once a minute. Run both `python3 test_winner_taker.py` and
+`python3 test_paper_support.py` for offline verification. Historical strategy
+notes below include superseded assumptions; the dated run notes take precedence.
+
 `winner_taker` — sells the tournament-winner leg and the round-qualifier legs
 ("will X qualify for the Quarterfinals / Semifinals / Final") of players whose
 current match is nearly lost, when the resting bid is still above what the

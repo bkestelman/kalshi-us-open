@@ -1,0 +1,10 @@
+[Unit]
+Description=Check tennis paper simulation every minute
+
+[Timer]
+OnBootSec=60
+OnUnitActiveSec=60
+AccuracySec=1
+
+[Install]
+WantedBy=timers.target
