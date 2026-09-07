@@ -18,6 +18,7 @@ finish_update() {
             printf 'Review incomplete (exit %s); inspect %s-execution.log.\n' "$review_exit" "$review_stamp"
         fi
     } >> data/reviews/updates.md
+    /usr/bin/python3 review_notify.py --review "$review_stamp" --exit-code "$review_exit" || true
 }
 trap finish_update EXIT
 python3 paper_report.py --record > "data/reviews/${review_stamp}-health.json"

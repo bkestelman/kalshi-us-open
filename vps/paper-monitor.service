@@ -6,5 +6,6 @@ Type=oneshot
 User=@USER@
 WorkingDirectory=@HOME@/kalshi-us-open
 ExecStart=/usr/bin/python3 @HOME@/kalshi-us-open/paper_report.py --record
+ExecStartPost=/usr/bin/python3 @HOME@/kalshi-us-open/review_notify.py --health
 StandardOutput=append:@HOME@/kalshi-us-open/data/live/paper_monitor.log
 StandardError=inherit

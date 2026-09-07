@@ -888,3 +888,28 @@ No supported delivery connection exists from the VPS CLI to this original chat;
 explained that limitation instead of promising automatic chat posts. Shell syntax
 checked. No simulator or collector restart. Abrupt SIGKILL/power loss cannot run
 the EXIT trap; systemd status and missing update remain necessary checks.
+
+## 2026-09-07 — automatic review delivery to original conversation
+
+Corrected earlier unsupported claim that VPS reviews cannot reach the original
+chat. Installed Codex CLI exposes `codex queue --thread UUID --message TEXT`.
+The current CODEX_THREAD_ID is 01a0786a-ed8c-71c1-be7d-927c35478e4d; a direct
+test returned a queued-message ID. Added review_notify.py: durable pending/sent
+outbox, serialized delivery, retries on CLI errors/timeouts, and duplicate
+suppression. Review EXIT handler now queues each final result or failure to
+this exact conversation. Minute monitor ExecStartPost evaluates warnings and
+retries pending deliveries. New/changed health warnings queue immediately on
+that minute's check; unchanged warnings remind at 30 minutes; recovery queues
+one followup. Messages request immediate investigation/fixes within paper-only
+scope and brief chat updates. Scheduled review editing must be coordinated.
+
+Validation: three focused tests cover failed delivery and retry, duplicate
+suppression, timeout retention, warning deduplication/reminders/recovery. Shell
+syntax and diff checks pass. Replayed actual 16:00 review through delivery:
+outbox has zero pending, one accepted review, no error. Deployed monitor unit
+and executed it successfully. Simulator and collectors unchanged. A separate
+queue test is also waiting for this thread to consume it. CLI acceptance proves
+queueing, not yet consumption by the current conversation. Automatic responses
+still depend on the session/runtime being available and model usage capacity;
+queue delivery cannot remove those limits. Crash between successful queueing
+and durable acknowledgment can duplicate a message (at-least-once delivery).
