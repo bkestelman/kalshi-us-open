@@ -1,0 +1,11 @@
+[Unit]
+Description=Review tennis paper trading every two hours UTC
+
+[Timer]
+OnCalendar=*-*-* 00/2:00:00 UTC
+Persistent=true
+AccuracySec=1min
+Unit=paper-review.service
+
+[Install]
+WantedBy=timers.target

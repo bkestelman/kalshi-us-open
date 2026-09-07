@@ -1,0 +1,16 @@
+[Unit]
+Description=Capture annual tennis Grand Slam markets (read only)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=@USER@
+WorkingDirectory=@HOME@/kalshi-us-open
+ExecStart=/usr/bin/python3 @HOME@/kalshi-us-open/related_collector.py
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

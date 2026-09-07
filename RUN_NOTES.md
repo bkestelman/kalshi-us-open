@@ -225,3 +225,45 @@ and logged `require_score_confirmation=true`. Both modes remain paper-only.
 Original offline suite and 13 focused paper/score/discovery tests pass.
 The first full 24-hour revised-run checkpoint is September 7 around 21:29 UTC;
 the confirmation-only comparison necessarily has a later starting point.
+
+## 2026-09-07 03:00 UTC — recurring reviews and annual-market capture
+
+User requested checks every couple of hours and identified annual Grand Slam markets.
+Added a systemd two-hour UTC timer (`paper-review.timer`, first 04:00 UTC) invoking
+local authenticated Codex noninteractive mode. Each bounded (45-minute maximum)
+review reads current notes, checks both paper accounts/feed/captures, investigates
+issues, tests fixes, and commits/pushes. Reports and execution logs live under
+`data/reviews/`. `flock` prevents overlapping scheduled reviews; dirty worktrees
+instruct the reviewer to report only. Authentication status says logged in using
+ChatGPT; the first scheduled model execution is still pending. This is separate
+from the existing minute health monitor. Timer failure is visible in systemd and
+execution logs, not a guaranteed notification in the original chat.
+
+New `related-markets.service` continuously captures raw sequenced orderbook
+snapshots/deltas for KXATPGRANDSLAM, KXWTAGRANDSLAM and KXGRANDSLAM, currently
+27 open contracts. Catalog/rules/player IDs refreshed every ten minutes and
+archived alongside raw books in `related_ws_YYYYMMDD.jsonl.gz`. Gaps force fresh
+subscriptions; errors and local timestamps retained. Independent collector keeps
+new coverage off the entry path and does not restart existing experiments.
+Annual contracts are capture-only pending verified year-to-date major winners
+and remaining-major dependencies. Annual NO contracts can remain open to year
+end; include collateral duration when evaluating them. Alcaraz's exact open
+contract is KXGRANDSLAM-CALC26-2: at least two majors in 2026, not an exact-two
+bucket. API close time September 29, 14:00 UTC. Annual Anisimova YES had 1-cent
+bids in catalog: possible stale opportunity, not yet an executable/eligible fill.
+
+Tonight's Navarro result supplied a first confirmation-only fill: at
+02:54:15.235 UTC, 47 YES KXWTAADVANCE-26USOQUAR-NAV at 99c, total cost $46.57
+including rounded fee, after ended/final-sets score at 02:54:15.076 decision.
+REST verified 47 contracts after the 100ms delay; decision-to-fill 157.7ms.
+The broad account independently bought 21 at 99c roughly 74 seconds earlier
+with score still 6-4, 5-2, 30-0. These are alternative counterfactual accounts:
+do NOT sum their overlapping liquidity as simultaneously executable profit.
+Settlement was still pending at inspection. Confirmation-only fill is useful
+positive evidence, not proof of guaranteed live execution or overall readiness.
+
+Health monitor now checks raw capture freshness, related collector snapshot
+readiness, and missing confirmation-only heartbeat. Validation: 13 support tests
+and full winner-taker test script pass; Python compile, shell syntax, systemd
+unit validation and calendar parsing pass (unrelated distro CPUAccounting
+warnings). Continuous primary/confirmed paper processes left running.

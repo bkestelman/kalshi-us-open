@@ -5,6 +5,7 @@ import glob
 import json
 import os
 import shutil
+import subprocess
 import time
 from datetime import datetime, timezone
 
@@ -41,6 +42,31 @@ def report():
                     continue
                 counts[row.get('a', 'unknown')] += 1
     warnings = []
+    try:
+        review_state = subprocess.run(['systemctl', 'show', 'paper-review.service',
+                                       '--property=Result', '--value'],
+                                      capture_output=True, text=True, timeout=3).stdout.strip()
+    except (OSError, subprocess.TimeoutExpired):
+        review_state = 'unknown'
+    if review_state not in ('success', ''):
+        warnings.append('scheduled Codex review result: ' + review_state)
+    related = read('related_health.json')
+    if not related or now - related.get('updated_at', 0) > 90:
+        warnings.append('related-market collector heartbeat missing or stale')
+    elif related.get('market_count') and not related.get('feed_ready'):
+        warnings.append('related-market collector awaiting snapshots: ' + related.get('error', ''))
+    captures = {}
+    for prefix in ('winner_taker_ws', 'related_ws'):
+        paths = glob.glob(os.path.join(OUT, prefix + '_*.jsonl*'))
+        latest = max(paths, key=os.path.getmtime) if paths else None
+        age = now - os.path.getmtime(latest) if latest else None
+        captures[prefix] = {'path': latest, 'age_s': round(age, 1) if age is not None else None,
+                            'bytes': os.path.getsize(latest) if latest else 0}
+        # Related capture refreshes subscriptions every ten minutes, including overnight.
+        active = prefix == 'related_ws' or bool(health.get('matches'))
+        limit = 720 if prefix == 'related_ws' else 180
+        if active and (age is None or age > limit):
+            warnings.append(prefix + ' capture missing or not being flushed')
     health_age = now - health.get('updated_at', 0)
     score_age = now - scores.get('updated_at', 0)
     if health_age > 300:
@@ -51,14 +77,14 @@ def report():
         warnings.append('watched matches but no feed messages for 180 seconds')
     if score_age > 30:
         warnings.append('score collector snapshot missing or older than 30 seconds')
-    if confirmed_health and now - confirmed_health.get('updated_at', 0) > 300:
+    if not confirmed_health or now - confirmed_health.get('updated_at', 0) > 300:
         warnings.append('confirmation-only paper heartbeat older than 300 seconds')
     if confirmed_health.get('matches') and not confirmed_health.get('feed_ready'):
         warnings.append('confirmation-only paper feed awaiting snapshots')
     if shutil.disk_usage(OUT).free < 2 * 1024**3:
         warnings.append('less than 2 GiB disk free')
     return {'at': datetime.now(timezone.utc).isoformat(), 't': now,
-            'warnings': warnings, 'heartbeat_age_s': round(health_age, 1),
+            'warnings': warnings, 'related_health': related, 'captures': captures, 'review_result': review_state, 'heartbeat_age_s': round(health_age, 1),
             'score_cache_age_s': round(score_age, 1), 'health': health,
             'today_action_counts': dict(counts),
             'confirmed_health': confirmed_health,

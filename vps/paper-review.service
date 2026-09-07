@@ -1,0 +1,15 @@
+[Unit]
+Description=Two-hour Codex review of tennis paper simulation
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=@USER@
+Environment=HOME=@HOME@
+Environment=PATH=@HOME@/.local/bin:/usr/local/bin:/usr/bin:/bin
+WorkingDirectory=@HOME@/kalshi-us-open
+ExecStart=@HOME@/kalshi-us-open/ops/paper-review.sh
+TimeoutStartSec=45min
+KillMode=control-group
+Nice=10
