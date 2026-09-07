@@ -876,3 +876,15 @@ proof previous scheduled review completed (known 06:00 usage failure).
 No execution/auth failure beyond the premature local audit read above; push
 outcome follows in execution/final response. One bounded review; exit without
 waiting for matches or changing scheduler.
+
+## 2026-09-07 17:07 UTC — user-facing review summaries
+
+Verified timer ran 04/06/08/10/12/14/16 UTC; latest service success ended
+16:03:48. 06:00 was incomplete due to usage limit, as documented by 08:00.
+User requested a brief update for every review. Prompt now requests a one/two
+sentence final response; wrapper appends it to data/reviews/updates.md and
+records explicit failure on nonzero exit. Backfilled concise prior summaries.
+No supported delivery connection exists from the VPS CLI to this original chat;
+explained that limitation instead of promising automatic chat posts. Shell syntax
+checked. No simulator or collector restart. Abrupt SIGKILL/power loss cannot run
+the EXIT trap; systemd status and missing update remain necessary checks.
