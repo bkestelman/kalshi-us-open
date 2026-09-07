@@ -267,3 +267,139 @@ readiness, and missing confirmation-only heartbeat. Validation: 13 support tests
 and full winner-taker test script pass; Python compile, shell syntax, systemd
 unit validation and calendar parsing pass (unrelated distro CPUAccounting
 warnings). Continuous primary/confirmed paper processes left running.
+
+## 2026-09-07 04:00–04:05 UTC — bounded scheduled review
+
+Initial `git status --short` was empty at ac66379. Read RUN_NOTES.md and
+READINESS.md first. Paper/read-only scope maintained; no trading key access,
+orders, agents, service restarts, scheduler edits or additional jobs. Both
+paper services, score service, annual collector and legacy REST/WS collectors
+were active with NRestarts=0. Primary PID 23503 since 02:22:31; confirmed
+23560 since 02:23:12; scores 6664 since Sep 6 21:13:37; annual 25696 since
+02:58:57; legacy REST/WS 670/672 since Sep 6 20:25:26. S3 sync was activating;
+backup completion was not verified. Disk 16G/48G used, 32G free (33%); memory
+858 MiB used, 2973 MiB available, swap unused. Historical hardware notes are stale.
+
+At 04:00:26 `paper_report.py` returned no warnings, primary/confirmed zero
+matches/legs, feed_ready=true, zero locked balances and open positions. Score
+cache age 1.5s; discovery age 18.8s at 04:00:58, empty groups/started but a
+populated schedule. Eight Sep 6 score-cache matches were closed, individually
+re-fetched 5.3–47.1s earlier (finished matches have one-minute polling). All
+eight have primary WATCHING/IN PLAY evidence: KOSNOS, PAUALC, MICETC, PEGCIR,
+MEDTIA, SABTOW, SHETSI, KALNAV. No newly missed match identified; this is not
+an exhaustive independent tournament census. Legacy REST's two "live" matches
+TIAMIC/SHEALC are Sep 8 listings, not proof of current play.
+
+Actual capture check: streamed all 56,041 complete primary raw book records
+(8 snapshots, 56,033 deltas), epochs 1788747770.4179873–1788753040.1977906;
+zero per-connection/sid sequence gaps. Last record 03:50:40.198 agrees with
+heartbeat last_message_at; 56,043 heartbeat messages include non-book messages.
+Largest record gap 1070.488s occurred in the overnight tail. Annual capture:
+7 catalogs/connections, 189 snapshots, 249 deltas at initial scan; zero sequence
+gaps/errors, all 27 subscriptions ready; epochs 1788749937.6214266–1788753608.0452516,
+maximum quiet interval 540.381s, consistent with ten-minute refresh. Streamed
+5,409,814 legacy WS records (5,362,594 deltas, 47,041 trades, 179 snapshots),
+epochs 1788739200.026–1788751910.349. Five-minute bins after 02:55 contained
+381/421/119/194/1781/63/47/36 records. Legacy dropped final Navarro match at
+03:31:37 and changed ticker set at 03:31:50, then continued five-minute
+zero-match heartbeats through 04:00:31; old capture mtime is expected idle,
+not a dead feed. Legacy full-day sequence reconstruction was not repeated.
+REST orderbook/trade capture sizes 1,330,267/1,473,457 bytes with mtime ages
+1.2/15.7s. No error/gap/traceback in primary, confirmed, score or legacy REST
+logs since 02:55; sole legacy WS reconnect was that ticker-set change. Earlier
+02:18:03 discovery 429 remains historical, with no repeat observed.
+
+Actions and accounting: since revised baseline Sep 6 21:28:44, primary has
+7 fills / 741 contracts, 3 REST-price-absent no-fills; all seven are inferred.
+Short realized $5.530265 (3 fills, 2 settled tickers); qualifier $5.81 (4 fills,
+4 settled tickers). Confirmed has one 47-contract fill, realized $0.43, no open
+positions; absent never-used confirmed short file agrees with zero short takes.
+No new entries after the preceding notes; new Navarro settlements are primary
+03:51:34.147 (21 shares, +$0.19) and confirmed 03:51:14.452 (47, +$0.43).
+Both are alternative simulations; their overlapping 47-contract REST liquidity
+must not be added as concurrent executable volume. Confirmed fill at
+02:54:15.235 was 470.7ms after first valid ended receipt 02:54:14.764278;
+decision at 02:54:15.076702, simulated execution 157.707ms. Primary bought
+73.740s before ended receipt with score 6-4, 5-2, 30-0. Official WTA result
+[Navarro–Kalinskaya](https://www.wtatennis.com/tournaments/us-open/scores/LS73992588)
+confirms 6-4, 6-2. Correct identity is Anna Kalinskaya, not Kalinina.
+
+Public Navarro QUAR GET confirms finalized YES, matching competitor UUID
+f17d541e-1f11-44ec-987b-3f2d8a90408b. Close 03:49:41, settlement_ts
+03:55:45.483893: simulation recognizes published result about 4.2–4.5 minutes
+before exchange settlement. Thus released paper collateral is not evidence
+of actual cash availability. No losing filled signal observed; early Michelsen
+and Pegula entries and historical Zheng false episodes still invalidate any
+zero-risk inference claim. No new post-02:55 score completion or fill candidate.
+
+Recomputed all five YES entry costs using ceil(0.07*n*p*(1-p)*100)/100:
+all match durable totals; Navarro fees $0.02/$0.04. Short unrounded-fee model
+remains different from conservative cent-rounded YES accounting. Code review
+confirms delayed exact-price REST + current WS + remaining-depth minimum,
+consumed depth and settled tickers persisted with positions before action logs;
+valid JSON accounts agree with observed totals. Atomic save fsyncs the file
+then replaces it, but not the parent directory: power-loss durability is not
+fully proven. Account/log are not one transaction, and liquidity changes
+between account saves are not continuously durable. No crash/restart injected.
+These are handoff limitations, not observed account corruption.
+
+Narrow fix: paper_report.py now includes confirmed daily action counts and
+confirmed position counts, and reports/warns on primary discovery age >300s.
+The monitor previously omitted these comparisons despite healthy-looking
+heartbeats. No strategy/configuration change or process restart needed; next
+minute monitor loads the updated script. Validation: 13 test_paper_support
+unittests pass; full test_winner_taker.py passes; py_compile and git diff --check
+pass. Direct report assertions pass for confirmed settlement/zero positions
+and injected missing-discovery warning. Existing unittest ResourceWarning for
+an unclosed temporary config file remains; no test failure.
+
+Annual capture-only audit: all 27 catalog rules/IDs reviewed; 15 IDs join
+exactly to current score-cache player IDs (including Alcaraz, Anisimova,
+Navarro), 12 have no current score-cache counterpart and remain unverified
+for any prospective match join. Catalog creation dates are Dec 19 2025,
+Feb 6/10 and Apr 2 2026, so issuance matters. Independently verified 2026
+singles champions before this US Open:
+- Australian Open: [Alcaraz](https://ausopen.com/articles/news/major-milestone-alcaraz-completes-slam-set-ao-2026-title)
+  and [Rybakina](https://ausopen.com/articles/news/resilient-rybakina-beats-sabalenka-ao-2026-title).
+- Roland-Garros: [Zverev](https://www.rolandgarros.com/en-us/article/2026-edition-rg-live-sunday-june-7)
+  and [Andreeva](https://www.rolandgarros.com/en-us/article/2026-edition-roland-garros-wrap-sat-june-6).
+- Wimbledon: [Sinner](https://www.atptour.com/en/news/wimbledon-2026-results)
+  and [Noskova](https://www.wtatennis.com/news/4533700/at-21-linda-noskova-caps-brilliant-fortnight-to-become-youngest-wimbledon-champion-in-15-years-defeats-karolina-muchova).
+
+Only the ongoing US Open remains among the four named 2026 majors. This
+six-winner census implies Anisimova has zero 2026 singles majors before USO;
+her prior USO elimination is in existing notes, not newly independently
+re-audited here. An open annual quote alone proves neither title history nor
+executable depth. No annual promotion or annual paper fill was made.
+
+Downloaded and read full [TENNISMAJOR terms](https://assets.kalshi.com/contract_terms/TENNISMAJOR.pdf):
+singles only, after issuance, walkover/retirement championship counts; doubles,
+mixed, junior and wheelchair wins excluded. Early expiration follows qualifying
+YES; latest expiration one week after cutoff and settlement by following day,
+subject to review. Anisimova API close Dec 31 04:59Z, expected expiration
+Dec 31 15:00Z, latest Jan 7 2027 15:00Z: do not assume immediate annual NO
+collateral release after elimination.
+
+Alcaraz KXGRANDSLAM-CALC26-2 is active/unresolved, UUID
+527915ea-e368-4c7f-a203-c83ebb6f6572 matching score cache; calendar-year
+at-least-two, not exactly-two. Issued Feb 10 after his AO win; its annual
+achievement wording differs from TENNISMAJOR's after-issuance rule. One
+2026 major already won + USO remaining means YES requires winning USO under
+normal completion. API expected expiration Sep 15 14:00Z, close/latest
+Sep 29 14:00Z. Linked [TENNISMILESTONES terms](https://assets.kalshi.com/contract_terms/TENNISMILESTONES.pdf)
+are headed NEWACHIEVEMENT and include official elimination, postponement,
+cancellation and outcome-review contingencies; nominal dates are not a
+cash-release guarantee. Reconcile generic achievement terms and specific
+contract before promotion. All annual series report quadratic multiplier 1.
+Web PDF open failed; unauthenticated urllib downloads succeeded. pdftotext
+was absent; installed pypdf only under /tmp/tennis-review-pdf and extracted
+both PDFs successfully. No project dependency changes. Initial guessed file
+paths were absent; resolved actual sources/paths before checks.
+
+Handoff: keep processes running. The revised account window is ~6h36m, not
+24h. Sep 7 21:29 is only 24h elapsed since account baseline; uninterrupted
+current primary/full-book capture cannot reach 24h until Sep 8 ~02:22/02:23,
+and annual capture until ~02:59. Next timer should review new matches,
+confirmed-versus-inferred depth/timing, cash-release lag and unresolved annual
+identity/terms details. Reports/PDFs/catalog retained under
+`data/reviews/20260907T040000Z-*`; no future wait or scheduler change.
