@@ -1,0 +1,17 @@
+[Unit]
+Description=Tennis pilot shadow, identical strategy with $500 paper budget
+After=network-online.target winner-taker-paper.service tennis-scores.service
+Wants=network-online.target
+
+[Service]
+User=@USER@
+WorkingDirectory=@HOME@/kalshi-us-open
+Environment=KALSHI_DATA=@HOME@/kalshi-us-open/data/pilot_paper
+ExecStart=/usr/bin/python3 @HOME@/kalshi-us-open/pilot.py paper
+Restart=on-failure
+RestartSec=30
+StandardOutput=append:@HOME@/kalshi-us-open/data/pilot_paper/stdout.log
+StandardError=inherit
+
+[Install]
+WantedBy=multi-user.target

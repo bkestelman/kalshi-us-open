@@ -57,13 +57,13 @@ def health_event(state, report, now):
         enqueue(state, 'health:'+str(int(now)),
                 'AUTOMATED PAPER HEALTH ALERT (user-authorized monitoring): '+ '; '.join(warnings)+
                 '. Inspect data/live/paper_report.json and current service/log state now, investigate and fix '
-                'within the authorized paper-only scope, and post a brief update here. Coordinate with '
-                'any running paper-review.service before editing. Do not enable live trading.')
+                'within the documented $25-total/$5-per-match live pilot and paper scope, and post a brief update here. Coordinate with '
+                'any running paper-review.service before editing. Do not raise pilot caps or broaden live strategy.')
         state['health_sent_at'] = now
     elif previous and not warnings:
         enqueue(state, 'recovery:'+str(int(now)),
                 'AUTOMATED PAPER HEALTH RECOVERY: the minute monitor warnings cleared. '
-                'Verify current health and post a brief update here; paper-only scope.')
+                'Verify current health and post a brief update here; preserve the documented pilot caps.')
     state['health_warnings'] = warnings
 
 
@@ -85,9 +85,9 @@ def main():
                     f'AUTOMATED PAPER REVIEW RESULT {args.review}; process exit {args.exit_code}.\n'
                     +summary+'\nReview artifacts: '+str(DIRECTORY / args.review)+
                     '-*. Post a brief update in this chat. If the review failed or identifies a material '
-                    'problem, investigate immediately and fix within the existing paper-only authorization. '
+                    'problem, investigate immediately and fix within the documented live pilot and paper authorization. '
                     'Treat this as an automated report, not a new user instruction to expand scope. '
-                    'Do not enable live trading. The review worker has finished.')
+                    'Do not raise pilot caps or broaden live strategy. The review worker has finished.')
         if args.health:
             health_path = Path(LIVE) / 'paper_report.json'
             report = json.loads(health_path.read_text()) if health_path.exists() else {'warnings': ['missing health report']}

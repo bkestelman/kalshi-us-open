@@ -1562,7 +1562,14 @@ def main():
                     help="override hard_cap for this session and WRITE it to "
                          "the config, so a later edit starts from what ran")
     args = ap.parse_args()
-    bot = WinnerTaker(args.mode == "live")
+    if args.mode == 'live':
+        # The legacy live path does not reconcile ambiguous orders safely.
+        # Route all CLI live launches through the shared, capped pilot runner.
+        if args.cap is not None and args.cap != 25:
+            ap.error('live pilot cap is fixed at $25')
+        os.environ['KALSHI_DATA'] = os.path.join(os.path.dirname(__file__), 'data', 'pilot_live')
+        os.execv(sys.executable, [sys.executable, os.path.join(os.path.dirname(__file__), 'pilot.py'), 'live'])
+    bot = WinnerTaker(False)
     if args.cap is not None:
         bot.cfg.v["hard_cap"] = args.cap
         with open(CONFIG_PATH, "w") as f:

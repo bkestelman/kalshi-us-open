@@ -102,7 +102,7 @@ def signed(method, path, body=None):
     fresh connection is expected traffic rather than an error.
     """
     data = json.dumps(body).encode() if body is not None else None
-    for attempt in (0, 1):
+    for attempt in ((0, 1) if method == "GET" else (0,)):
         key_id, priv = _load("trade_api_id.txt", "trade_api_key.rsa")
         headers = sign(priv, key_id, method, path)
         headers["Content-Type"] = "application/json"
@@ -121,7 +121,7 @@ def signed(method, path, body=None):
                 return r.status, raw.decode(errors="replace")[:300]
         except Exception as e:
             _drop()
-            if attempt:
+            if attempt or method != "GET":
                 return -1, f"{type(e).__name__}: {e}"
 
 

@@ -1145,3 +1145,30 @@ not yet>=24h). Earliest current primary/confirmed24h checkpoints Sep8
 02:22/02:23, annual02:59; historical baseline Sep6 21:28 is not uninterrupted
 capture. Next review: CERBLO/OSARYB completion, source regressions, new confirmed
 executable depth and preroll coverage. Exit without waiting or scheduling.
+
+## 2026-09-07 20:12 UTC — user-authorized live pilot implementation
+
+User explicitly authorized live launch after blockers, strict 99/1 signal,
+$25 total/$5 per match, and supplied ~/trade-key{,-id}. Explained ambiguous
+submission: exchange acceptance can precede lost response, so releasing budget
+or retrying can duplicate risk. Added shared pilot.py live/paper strategy and
+durable pilot_execution ledger. POST attempted once, intent fsynced before
+submission; uncertainty pauses all entries and retains allocation across
+restarts until terminal exchange reconciliation. Missing from order history
+is not rejection. Both sides/all related legs share match event and total cap;
+fees included. Pilot allocation is cumulative and not recycled on settlement.
+Broader paper accounts unchanged; pilot shadow uses $500/$125. See PILOT.md.
+
+Legacy winner_taker.py live CLI now routes to new pilot. Old signed helper also
+no longer retries POSTs. Winner-YES is now executable through the same pilot
+strategy as shadow NO/YES, instead of paper-only module. Annual capture-only and
+model-edge speculative branch excluded from pilot. Key files kept outside repo,
+permissions tightened to600, no secret output. Signed GET balance/order history
+and four fee schedules passed preflight; actual order schema executed/fp counts
+verified from read-only existing account order. No preflight test orders.
+
+11 pilot tests, five notification tests,13 support tests and full existing
+winner script pass; compile/shell/diff validation pass. Scheduled review scope
+and chat alert instructions updated for user-authorized live pilot; no cap
+increase or broader live strategy authorized. Minute report tracks both pilot
+health, errors and unresolved reservations. Pending deployment follows.

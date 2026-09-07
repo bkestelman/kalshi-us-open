@@ -1,0 +1,17 @@
+[Unit]
+Description=Tennis live pilot, cumulative $25 total and $5 per match
+After=network-online.target winner-taker-paper.service tennis-scores.service
+Wants=network-online.target
+
+[Service]
+User=@USER@
+WorkingDirectory=@HOME@/kalshi-us-open
+Environment=KALSHI_DATA=@HOME@/kalshi-us-open/data/pilot_live
+ExecStart=/usr/bin/python3 @HOME@/kalshi-us-open/pilot.py live
+Restart=no
+TimeoutStopSec=30
+StandardOutput=append:@HOME@/kalshi-us-open/data/pilot_live/stdout.log
+StandardError=inherit
+
+[Install]
+WantedBy=multi-user.target

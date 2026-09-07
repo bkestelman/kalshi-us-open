@@ -45,6 +45,21 @@ def report():
                         continue
                     counter[row.get('a', 'unknown')] += 1
     warnings = []
+    pilots = {}
+    for name in ('pilot_live', 'pilot_paper'):
+        directory = os.path.join(os.path.dirname(OUT), name)
+        if not os.path.exists(os.path.join(directory, 'pilot_ledger.json')):
+            continue
+        h = read('pilot_health.json', directory)
+        pilots[name] = h
+        if not h or now-h.get('updated_at', 0) > 60:
+            warnings.append(name + ' heartbeat missing or stale')
+        if h.get('unresolved'):
+            warnings.append(name + ' unresolved order; entries paused for reconciliation')
+        if h.get('error'):
+            warnings.append(name + ' error: ' + h['error'])
+        if h.get('legs') and now-max(h.get('last_message_at', 0), h.get('started_at', 0)) > 180:
+            warnings.append(name + ' watched markets but no feed messages for 180 seconds')
     try:
         review_state = subprocess.run(['systemctl', 'show', 'paper-review.service',
                                        '--property=Result', '--value'],
@@ -90,7 +105,7 @@ def report():
     if shutil.disk_usage(OUT).free < 2 * 1024**3:
         warnings.append('less than 2 GiB disk free')
     return {'at': datetime.now(timezone.utc).isoformat(), 't': now,
-            'warnings': warnings, 'related_health': related, 'captures': captures, 'review_result': review_state, 'heartbeat_age_s': round(health_age, 1),
+            'warnings': warnings, 'pilots': pilots, 'related_health': related, 'captures': captures, 'review_result': review_state, 'heartbeat_age_s': round(health_age, 1),
             'score_cache_age_s': round(score_age, 1), 'health': health,
             'today_action_counts': dict(counts),
             'confirmed_today_action_counts': dict(confirmed_counts),
