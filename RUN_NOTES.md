@@ -403,3 +403,102 @@ and annual capture until ~02:59. Next timer should review new matches,
 confirmed-versus-inferred depth/timing, cash-release lag and unresolved annual
 identity/terms details. Reports/PDFs/catalog retained under
 `data/reviews/20260907T040000Z-*`; no future wait or scheduler change.
+
+## 2026-09-07 08:00–08:04 UTC — bounded scheduled review
+
+Read RUN_NOTES.md and READINESS.md first; initial worktree clean at 29938b5.
+Paper/read-only review only: no trading-key access, real orders, agents,
+service restarts, strategy/configuration changes, scheduler edits or new jobs.
+Detailed machine evidence: data/reviews/20260907T080000Z-audit.json.
+
+All six paper/score/related/legacy capture services active, NRestarts=0.
+Primary PID 23503 since 02:22:31, confirmed 23560 since 02:23:12,
+scores 6664 since Sep 6 21:13:37, related 25696 since 02:58:57,
+legacy REST/WS 670/672 since Sep 6 20:25:26. At 08:00:37 paper_report.py
+returned no warnings: primary heartbeat age 4.5s, score cache 1.2s,
+discovery 33.4s; both paper accounts feed_ready, zero watched matches/legs,
+zero locked balances/positions. Disk 16G/48G used, 32G free (33%).
+S3 sync finished successfully at 08:00:20, 0 new files uploaded, 124 objects,
+19,459,128,930 bytes reported; object integrity/current-file backup not verified.
+
+Continuity: streamed 56,041 complete primary records (8 snapshots, 56,033
+deltas), epochs 1788747770.4179873–1788753040.1977906; zero per-connection/sid
+sequence gaps, maximum record interval 1070.488s. No new raw messages since
+03:50:40, matching heartbeat counters and zero-match idle. Annual stream has
+30 catalogs/subscriptions, 810 snapshots and 1126 deltas through epoch
+1788768008.7740374; zero sequence gaps, maximum interval 600.486s, all 27
+subscriptions ready. Active gzip members ended with EOF; complete records
+were audited, not treated as closed finalized archives. Legacy WS streamed
+5,409,814 records (5,362,594 deltas, 47,041 trades, 179 snapshots), epochs
+1788739200.026–1788751910.349, unchanged since previous review. Its five-minute
+zero-match heartbeats continue through 08:00:31. Legacy sequence replay not
+repeated. REST book/trade files 1,561,796/1,496,105 bytes with mtime ages
+5.4/99.9s at audit; REST still labels future Sep 8 TIAMIC/SHEALC listings
+as live. No dead-feed conclusion from this overnight quiet period.
+
+No new action of any kind since 04:00 in BOTH live and confirmed. Baseline
+analysis remains 7 speculative fills / 741 contracts, 3 REST-price-absent
+misses; short realized $5.530265, qualifier $5.81. Confirmed has one 47-contract
+Navarro fill and $0.43 realized; absent never-used short account agrees with
+zero takes. Navarro speculative 21 @99c cost $20.81 versus confirmed 47 @99c
+cost $46.57; fee increments $0.02/$0.04 agree with ceil(0.07*n*p*(1-p)*100)/100.
+Confirmed decision had ended 2–0 sets and matching player identity; speculative
+entry was ~74s earlier at 6–4, 5–2, 30–0. Settlements occurred at epochs
+1788753094.147/1788753074.452 (~57 minutes after first ended score). Independent
+counterfactual accounts must not have their overlapping liquidity summed.
+Earlier Michelsen/Pegula entries remain speculative, not post-match proof.
+No new false positive or missed match found; eight Sep 6 closed matches all
+appear in primary logs. This is not an independent full tournament census.
+
+All eight Sep 6 score rows freshly received 13.4–53.2s before audit. Some older
+closed rows are 1–5 hours old because discovery selects a rolling 36-hour
+start window; global cache timestamp does not imply every retained score is
+fresh. Source code confirms finished matches poll each minute while selected.
+Fresh discovery has zero started/groups and 12 future main-tour matches;
+next scheduled main-tour start epoch 1788793200 (15:00 UTC). No future wait.
+Primary/confirmed/score/legacy logs since 04:00 contain no error, traceback,
+reconnect or HTTP 429. An initial loose search matched 429 in timestamps;
+rechecking message bodies found zero errors. Annual records have no error rows.
+
+Read paper_report.py, depth ledger, atomic_json and qualifier fee path.
+Remaining-depth consumption and conservative resnapshot semantics remain;
+account files parse with zero positions and totals matching history. Existing
+limitations persist: short fees unrounded versus qualifier cents; no parent
+directory fsync, account/log not transactional, unsaved intervening liquidity
+not crash durable. No crash injection. Validation: 13 test_paper_support tests
+pass and full test_winner_taker.py passes. Existing temporary config unclosed
+file ResourceWarning remains. No production code fix justified this interval.
+
+Annual audit remains capture-only. Current 27-market catalog: 15 player IDs
+match score-cache IDs, 12 prospective joins unverified. Re-read archived
+TENNISMAJOR and TENNISMILESTONES PDFs with existing /tmp pypdf; no installation.
+TENNISMAJOR is singles after issuance, with qualifying YES early expiration;
+NO collateral can remain until year end/latest Jan 7 2027 and outcome review.
+Alcaraz KXGRANDSLAM-CALC26-2 remains active/unresolved, explicit at-least-two
+in 2026, ID 527915ea-e368-4c7f-a203-c83ebb6f6572 matches scores, expected
+expiration Sep 15 14:00Z, close Sep 29 14:00Z. Rechecked AO Alcaraz/Rybakina,
+RG Zverev/Andreeva and Wimbledon Sinner/Noskova via the official sources
+linked in the 04:00 review. ATP direct page returned 403; official Wimbledon
+search result https://www.wimbledon.com/en_GB/gallery/jannik_sinner_champion
+and ATP final report search result confirmed Sinner. Alcaraz already has AO;
+only USO remains, implying he needs USO for two under normal completion.
+Generic NEWACHIEVEMENT contingencies versus specific year wording still need
+reconciliation before promotion. Active listing never establishes zero prior
+titles; no annual fill/promotion made. Historical titles are current-year
+pre-USO singles titles, not career totals or last year's titles.
+
+Operational failures: 06:00 scheduled execution log ends with Codex usage-limit
+errors, so that review was incomplete and did not produce a completed handoff.
+Current paper_report reports review_result=success while this invocation is
+running: it reads current systemd Result, not durable previous-review success.
+This monitoring blind spot remains; scheduler explicitly left untouched.
+Unrelated /home/ubuntu/kalshi control panel is in a crash loop (NRestarts=12768
+at first check): RuntimeError tennis-tournwinner --obs-every has no kind in
+FLAGS. Outside this paper repo; left unchanged for interactive owner.
+
+Handoff: maintain running experiment. Current uninterrupted primary capture
+is ~5h40m, not >=24h. Earliest full uninterrupted primary/confirmed checkpoint
+remains Sep 8 ~02:22/02:23 UTC; annual ~02:59. Next scheduled reviewer should
+check new matches, confirmation timing/depth, settlement lag and the operational
+failures above. Only this report and run notes changed; commit/push outcome
+is recorded by the review execution and final response.
