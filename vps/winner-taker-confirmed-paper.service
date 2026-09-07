@@ -8,6 +8,7 @@ User=@USER@
 WorkingDirectory=@HOME@/kalshi-us-open
 Environment=KALSHI_DATA=@HOME@/kalshi-us-open/data/confirmed
 Environment=TENNIS_SCORE_CACHE=@HOME@/kalshi-us-open/data/live/tennis_scores.json
+Environment=TENNIS_DISCOVERY_CACHE=@HOME@/kalshi-us-open/data/live/winner_taker_discovery.json
 ExecStart=/usr/bin/python3 @HOME@/kalshi-us-open/winner_taker.py paper
 Restart=always
 RestartSec=10

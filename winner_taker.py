@@ -73,7 +73,8 @@ from datetime import datetime, timezone
 import websockets
 
 from discovery import Discovery
-from iolib import LIVE as OUT
+from discovery_feed import FollowerDiscovery, export_groups
+from iolib import LIVE as OUT, DayWriter
 from kalshi import (API, WS_HOST, WS_PATH, Book, fee, get, signed, ws_headers)
 from paper_support import PaperLiquidity, atomic_json, rest_quantity
 from score_context import context as score_context, future_round
@@ -183,6 +184,7 @@ DEFAULTS = {
     "paper_latency_ms": 100.0,  # decision to simulated arrival; measured separately
     "paper_verify_rest": True, # reject frozen/closed books and validate displayed depth
     "require_score_confirmation": False, # comparison experiment; no inferred entries
+    "capture_books": True,     # primary paper feed, including qualifier ask quantities
     # Housekeeping only -- R sampling, config reload, the observation log.
     # Entries are NOT on a timer: they fire on the book update that creates
     # them, because alloc_study measured every delay as a straight loss.
@@ -372,7 +374,8 @@ class WinnerTaker:
     def __init__(self, live):
         self.live = live
         self.cfg = Config()
-        self.disc = Discovery(log=log)
+        shared_discovery = os.environ.get('TENNIS_DISCOVERY_CACHE') if not live else None
+        self.disc = FollowerDiscovery(shared_discovery) if shared_discovery else Discovery(log=log)
         self.pool = ThreadPoolExecutor(max_workers=4)
         # Orders go through a pool of ONE, always the same thread. kalshi.signed
         # keeps its HTTPS connection in thread-local storage, so sharing the
@@ -410,11 +413,15 @@ class WinnerTaker:
         self.qualifier_paper = None
         self.last_message_at = 0.0
         self.paper_retry_after = {}
+        self.capture = None
+        self.run_id = f'{int(time.time() * 1000)}-{os.getpid()}'
 
     # ------------------------------------------------------------- logging
     def jlog(self, obj):
         obj["t"] = round(time.time(), 3)
         obj.setdefault("mode", "live" if self.live else "paper")
+        obj.setdefault('run_id', self.run_id)
+        obj.setdefault('confirmation_only', self.cfg['require_score_confirmation'])
         tag = "" if self.live else "paper_"
         p = os.path.join(OUT, f"winner_taker_actions_{tag}{now_day()}.jsonl")
         with open(p, "a") as f:
@@ -954,6 +961,7 @@ class WinnerTaker:
             c, _reason = self.evaluate(leg)
             if c:
                 c['decision_at'] = time.time()
+                c['message_received_at'] = self.last_message_at
                 self.inflight.add(leg.win_tk)
                 asyncio.ensure_future(self._take_and_clear(c))
 
@@ -1139,6 +1147,7 @@ class WinnerTaker:
                    "score": c.get('score'),
                    "verification": verification if not self.live else None,
                    "decision_at": decision_at,
+                   "message_received_at": c.get('message_received_at'),
                    "elapsed_ms": round((time.time() - decision_at) * 1000, 3),
                    "fill_model": 'exchange' if self.live else 'delayed-rest-verified-v2'})
         self.save_paper_account()
@@ -1411,6 +1420,9 @@ class WinnerTaker:
                         changed = True
                 if changed:
                     self.dirty.set()
+                if not isinstance(self.disc, FollowerDiscovery):
+                    atomic_json(os.path.join(OUT, 'winner_taker_discovery.json'),
+                                export_groups(self.groups, self.disc))
             except Exception as e:
                 log(f"discovery error: {type(e).__name__} {e}")
             await asyncio.sleep(DISCOVERY_INTERVAL)
@@ -1486,6 +1498,11 @@ class WinnerTaker:
                             self.qualifier_paper.book_update(tk, m, b, typ == 'orderbook_snapshot')
                         # The entry path. Not a timer -- see on_book().
                         self.on_book(tk)
+                        if self.capture:
+                            msg['t'] = t
+                            msg['connection'] = sub
+                            self.capture.write(json.dumps(msg, separators=(',', ':')) + '\n',
+                                               now_day(), t)
             except Exception as e:
                 self.feed_ready = False
                 log(f"ws error: {type(e).__name__} {str(e)[:200]}; retry in 5s")
@@ -1519,6 +1536,8 @@ class WinnerTaker:
         self.feed_enforced = True
         if not self.live:
             self.qualifier_paper = QualifierPaper(self, OUT)
+            if self.cfg['capture_books'] and not self.cfg['require_score_confirmation']:
+                self.capture = DayWriter('winner_taker_ws', level=1, flush_sec=2)
         log(f"winner_taker starting ({'LIVE' if self.live else 'paper'}), "
             f"cap ${self.cfg['hard_cap']:,.0f}, per-leg "
             f"${self.cfg['per_leg_cap']:,.0f}, per-event "
@@ -1529,6 +1548,7 @@ class WinnerTaker:
         await asyncio.get_running_loop().run_in_executor(self.pool, self.restore)
         if self.stop:
             return
+        self.jlog({'a': 'start', 'pid': os.getpid(), 'config': dict(self.cfg.v)})
         await asyncio.gather(self.discovery_loop(), self.ws_loop(),
                              self.housekeeping_loop(), self.mark_loop(),
                              self.settle_loop(), self.state_loop(),
@@ -1553,6 +1573,8 @@ def main():
         # Nothing rests, so there is nothing to cancel: an IoC is done by the
         # time we hear about it. Stopping is just stopping.
         bot.save_state()        # R is the one thing a restart cannot rebuild
+        if bot.capture:
+            bot.capture.close()
         log(f"stopped: {bot.takes} takes, ${bot.locked():,.2f} still locked "
             f"across {len(bot.pos)} legs")
         sys.exit(0)

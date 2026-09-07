@@ -12,6 +12,7 @@ from kalshi import Book
 from paper_support import PaperLiquidity, rest_quantity
 from score_context import context, future_round, confirmed_winner
 from qualifier_paper import QualifierPaper, secured_ticker
+from discovery_feed import FollowerDiscovery
 
 
 class PaperTests(unittest.TestCase):
@@ -135,6 +136,28 @@ class PaperTests(unittest.TestCase):
         b.books[l.match_tk].yes.clear()
         b.books[l.match_tk].no = {.99: 1000}
         self.assertEqual(b.evaluate(l)[1], 'awaiting-score-confirmation')
+
+    def test_follower_discovery_add_refresh_close_and_expiry(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = os.path.join(directory, 'discovery.json')
+            row = ['ATP', 'MATCH', 'Tournament', {'A': {'match': 'M', 'name': 'A', 'legs': [['T', 'E']]}}]
+            data = {'updated_at': time.time(), 'groups': [row],
+                    'started': [['ATP', 'MATCH']], 'schedule': {}}
+            with open(path, 'w') as f:
+                json.dump(data, f)
+            follower = FollowerDiscovery(path)
+            newly, alive = follower.scan(set())
+            self.assertEqual(newly, [row])
+            self.assertEqual(alive, {('ATP', 'MATCH')})
+            newly, _ = follower.scan({('ATP', 'MATCH'), ('WTA', 'OLD')})
+            self.assertFalse(newly)
+            self.assertEqual(follower.refreshed, [row])
+            self.assertEqual(follower.closed, {('WTA', 'OLD')})
+            data['updated_at'] -= 181
+            with open(path, 'w') as f:
+                json.dump(data, f)
+            with self.assertRaises(ValueError):
+                follower.scan(set())
 
     def test_rest_verification_rejects_closed_and_absent_liquidity(self):
         market = {'market': {'status': 'active', 'result': ''}}

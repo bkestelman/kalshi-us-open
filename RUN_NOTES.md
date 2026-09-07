@@ -204,3 +204,15 @@ short-side inferred path's fair=0 and cap exemption are not validated.
 
 Reproduce the review with:
 `python3 analyze_paper_run.py --since 2026-09-06T21:28:44Z`.
+
+Launching two full discovery scans concurrently caused one HTTP 429 at
+02:18:03; the primary recovered at 02:19:22. The comparison service now follows
+the primary's exported match/market mappings instead of duplicating REST scans.
+It retains its own websocket books, depth ledger and accounts. Stale discovery
+snapshots are rejected rather than interpreted as an empty schedule.
+
+The primary now records its own compressed websocket feed, including qualifier
+ask sizes, in `winner_taker_ws_YYYYMMDD.jsonl.gz`. This closes the evidence gap
+in the Pegula retrospective and enables replay of both trade directions under
+different confirmation delays. Action records carry a run ID and comparison
+mode, and startup records capture the effective configuration.
