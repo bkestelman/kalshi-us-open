@@ -216,3 +216,12 @@ ask sizes, in `winner_taker_ws_YYYYMMDD.jsonl.gz`. This closes the evidence gap
 in the Pegula retrospective and enables replay of both trade directions under
 different confirmation delays. Action records carry a run ID and comparison
 mode, and startup records capture the effective configuration.
+
+Deployed code `f1d81a4`: primary restarted 02:22:32 UTC and recovered its
+three short fills / $5.53 and three winner fills / $5.62 with no open positions.
+Primary full-book capture began 02:22:50. Confirmation-only follower started
+02:23:12, subscribed to the same five Navarro-related/match tickers immediately,
+and logged `require_score_confirmation=true`. Both modes remain paper-only.
+Original offline suite and 13 focused paper/score/discovery tests pass.
+The first full 24-hour revised-run checkpoint is September 7 around 21:29 UTC;
+the confirmation-only comparison necessarily has a later starting point.

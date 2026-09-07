@@ -9,7 +9,10 @@ must not be combined as though they share one capital cap.
 
 Run `python3 paper_report.py` for current health and account totals.
 `tennis-scores.service` collects score changes; `paper-monitor.timer` records
-health once a minute. Run both `python3 test_winner_taker.py` and
+health once a minute. `winner-taker-confirmed-paper.service` runs the
+confirmation-only comparison in `data/confirmed/`, sharing the primary's
+discovery mappings and score cache. The primary's full book capture is in
+`data/live/winner_taker_ws_YYYYMMDD.jsonl.gz`. Run both `python3 test_winner_taker.py` and
 `python3 test_paper_support.py` for offline verification. Historical strategy
 notes below include superseded assumptions; the dated run notes take precedence.
 

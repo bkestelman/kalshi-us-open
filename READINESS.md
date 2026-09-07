@@ -1,5 +1,31 @@
 # winner_taker — readiness
 
+**Current status, 2026-09-07: paper only; not ready for live trading.**
+The dated [RUN_NOTES.md](RUN_NOTES.md) supersede the historical checklist below.
+The first roughly five hours of the revised run produced six REST-verified
+paper fills (720 contracts) across three matches, with $5.53 in the short
+account and $5.62 in the separate winner-qualification account. All entries
+were book-inferred; two were well before the last point. This is evidence of
+tradable candidates and working partial/no-fill simulation, not zero risk.
+
+Current checks still required:
+
+- At least a full day of the revised paper feed and outcome review.
+- Compare fast inferred entries with the new confirmation-only paper service.
+  Final `ended` scores now confirm outcomes without the previous extra
+  two-minute wait for `closed`.
+- Give inferred shorts explicit probability/edge justification and risk caps
+  before live use. The legacy fair=0 and comeback-cap exemption are unproven.
+- Reconcile account fees, live order responses and ambiguous order submission
+  outcomes; neither paper fills nor a positive small sample establish these.
+- Verify coverage and execution using the new full related-market book capture.
+
+Both paper accounts persist across restarts. The score collector and minute
+health monitor run independently on the VPS. The confirmation-only variant
+shares discovered match/market mappings and maintains its own books/accounts.
+
+---
+
 Status as of 2026-09-04. Paper is running on `kalshi-vps`; nothing has traded
 with real money.
 
