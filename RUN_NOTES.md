@@ -772,3 +772,107 @@ NOT >=24h). Earliest process-window checkpoint Sep 8 02:22/02:23 UTC, annual
 02:59; not a claim of uninterrupted sockets. Next review should verify resumed
 subscriptions/snapshots from 14:15 preroll, completion timing, missed depth and
 settlement cash lag. One bounded review; exit without waiting for matches.
+
+## 2026-09-07 16:00–16:04 UTC — bounded paper review
+
+Read RUN_NOTES.md and READINESS.md first; initial worktree clean at a93e661.
+No agents, trading-key access, real orders, restarts, configuration changes,
+scheduler changes or new jobs. Only review evidence/documentation written.
+Evidence: data/reviews/20260907T160000Z-audit.json and timestamped public
+Potapova/Alcaraz market responses and QUAR catalog. Initial large output was
+truncated; remaining run-note sections and relevant code were read separately.
+
+All six services active, NRestarts=0: primary PID 23503 since 02:22:31,
+confirmed 23560 since 02:23:12, scores 6664 since Sep 6 21:13:37, annual
+25696 since 02:58:57, legacy REST/WS 670/672 since Sep 6 20:25:26.
+Disk 16G/48G used, 32G free (33%); 2903 MiB memory available, swap unused.
+S3 sync succeeded 16:00:22, total size 19,459,130,582 bytes; remote integrity
+and current-file backup completeness not checked. Unrelated control service
+still auto-restarting; outside this repo, unchanged.
+
+Read and executed paper_report.py: no warnings; audit score age 0.5s,
+discovery 27.8s. Both modes now feed_ready=true, two matches/13 legs, zero
+positions/locked balances. Automatic recovery after overnight idle VERIFIED:
+primary watched ANDPOT 14:15:28.270, subscribed seven tickers 14:15:28.340;
+confirmed watched/subscribed 14:16:14.169/.229. Primary added SWIZHE
+14:45:25.659, subscribed 17 at .954; confirmed 14:46:14.244/.488.
+Raw primary connection 3 has seven snapshots starting 1788790528.3546972;
+connection 4 has 17 starting 1788792325.9810877. No restart needed.
+
+Streamed primary 321,049 complete records (32 snapshots, 321,017 deltas),
+through 1788796869.6451004; zero connection/sid sequence gaps. Full-day max
+interval 37,488.157s is overnight idle. A later resumed-only pass counted
+269,496 records with maximum interval 12.205s. Annual 78 catalogs/subscriptions,
+2,106 snapshots, 2,986 deltas through 1788796821.285499, zero sequence gaps,
+max interval 600.486s; only historical 08:17 capture_error, current 27 ready.
+Legacy 6,194,709 complete records (6,130,657 deltas, 63,816 trades, 236
+snapshots) through 1788796905.830; max interval 42,096.490s includes idle.
+Legacy sequence validation NOT performed. All gzip streams end at open-member
+EOF after complete records, not finalized archives. Legacy two-match heartbeat
+continues through 16:00:33. REST book/trade files 2,446,991/2,058,746 bytes,
+ages 1.80/0.08s. No primary/confirmed/score/REST errors since 14:00; legacy
+WS has one ticker-set reconnect at 15:48:50.436. Capture mtime ages initially
+used audit-start time and became negative as files grew; corrected with fresh
+sample timestamps. An attempted audit read before its process finished failed
+FileNotFoundError; successful completed audit was subsequently read.
+
+Both current matches have live scores and no winner: at receipt
+1788796908.5231605 Potapova led Andreeva 7-5, 0-0; Swiatek led Zheng 3-0
+in set one. Both are mapped/watched. Eight earlier closed matches are present
+in primary logs, received 2.9–42.8s before audit. CERBLO not_started at 17:00
+is outside 45-minute preroll at this review, not a missed match. Score receipt
+freshness is not source latency. Investigated unusual KXWTA-26-POT: public GET
+confirms USO event KXWTA-26USO, Anastasia Potapova and UUID
+23554e73-dcff-4dd7-b90f-176cd7761733 matching score. Public QUAR catalog
+returns 24 markets, empty cursor, no Potapova; no evidence of dropped QUAR
+listing. Broader independent tournament census remains unverified. Zheng has
+zero R samples in log, consistent with known one-sided-book limitation;
+no new signal/false positive identified.
+
+BOTH live and confirmed have zero new actions since 14:00, hence no new
+completion/fill/settlement comparison. Baseline remains seven speculative
+fills/741 contracts, three REST-price-absent misses, short realized $5.530265,
+qualifier $5.81; confirmed one 47-contract fill, realized $0.43. Durable JSON
+accounts parse and are flat. Recomputed fill-versus-first-ended timing:
+Michelsen/Pegula precede receipt 658.049/1385.082s; Navarro broad precedes
+73.740s, confirmed follows 0.471s. These are not independently timed last
+points. Counterfactual accounts cannot sum overlapping liquidity. No new
+settlement; prior published-result versus actual cash-release lag remains.
+
+Read depth/REST/fee/persistence paths: delayed active/unresolved exact-price
+REST quantity plus current WS and remaining ledger minimum, conservative
+resnapshots. Recomputed all five qualifier fees/costs: $0.09/$0.07/$0.27/$0.02
+broad and $0.04 confirmed, all match. Short fees remain unrounded. Qualifier
+saves before logging; short logs before save. No parent-directory fsync,
+account/log transaction or continuously durable intervening depth. No observed
+corruption; no crash injection. No narrow production fix justified. Tests:
+13 support unittests and full winner_taker script passed; existing unclosed
+config ResourceWarning remains. git diff --check performed before commit.
+
+Annual capture-only catalog remains 27 contracts, 15 UUIDs match score cache,
+12 prospective identities unverified. Reopened official sources linked in
+04:00/12:00 notes: 2026 AO Alcaraz/Rybakina, RG Zverev/Andreeva, Wimbledon
+Sinner/Noskova. These are current-year titles before USO, not career or prior
+calendar-year totals. Only ongoing USO remains. Andreeva already won RG;
+a loss today must not imply zero annual titles. Read both archived rule PDFs:
+TENNISMAJOR counts singles after issuance; annual NO may retain collateral to
+year-end/latest Jan 7 2027 plus settlement/review. Specific Alcaraz calendar-year
+terms are distinct from that after-issuance condition. Public GET confirms
+KXGRANDSLAM-CALC26-2 active/unresolved, 59/60c, at least two in 2026, UUID
+527915ea-e368-4c7f-a203-c83ebb6f6572 matching score identity. Already AO
+champion; USO needed for second under normal completion. Expected expiry
+Sep 15 14:00Z, close/latest Sep 29 14:00Z, timer 300s do not guarantee cash
+release. NEWACHIEVEMENT elimination, cancellation/fractional payouts,
+postponement up to two years and review clauses remain promotion-gate work.
+No annual promotion or fill; active listing never proves absence of prior titles.
+
+Handoff: preserve experiment, primary process only ~13h40m, not >=24h.
+Earliest current primary/confirmed process checkpoints Sep 8 02:22/02:23,
+annual 02:59; documented idle sockets are not uninterrupted capture claims.
+Next timer should compare current matches' eventual completion against fills,
+check future preroll/related-leg additions, missed depth and settlement lag.
+paper_report review_result=success remains current systemd Result, not durable
+proof previous scheduled review completed (known 06:00 usage failure).
+No execution/auth failure beyond the premature local audit read above; push
+outcome follows in execution/final response. One bounded review; exit without
+waiting for matches or changing scheduler.
