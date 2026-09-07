@@ -1172,3 +1172,18 @@ winner script pass; compile/shell/diff validation pass. Scheduled review scope
 and chat alert instructions updated for user-authorized live pilot; no cap
 increase or broader live strategy authorized. Minute report tracks both pilot
 health, errors and unresolved reservations. Pending deployment follows.
+
+### Live/shadow deployment verified, 20:12 UTC
+
+Committed/pushed f47e716 before deployment. Shadow started20:11:35 UTC, live
+started20:11:54 UTC after shadow snapshots were ready. Live PID85944 and shadow
+PID85822 each received all31 subscribed books for23 related legs; feed_ready
+true, account_ready true, zero orders/allocated/unresolved/errors. Minute report
+no warnings. Live preflight again verified signed account reads before enabling
+entries. Existing broad and confirmed paper services were not restarted. No
+real order was forced to test connectivity; first eligible live opportunity
+will provide actual execution evidence. Live service has Restart=no.
+
+The literal ~/trade-key paths are read by the isolated single-attempt pilot
+transport; keys were not copied into repo or shared with paper collectors.
+No cap expansion or model-edge/annual live entry enabled.
