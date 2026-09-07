@@ -593,3 +593,89 @@ annual 02:59. This is not an uninterrupted socket claim: idle disconnects above
 are recorded. Verify fresh subscriptions at next matches, confirmed timing,
 missed depth, settlement lag, annual eligibility and monitoring blind spot.
 One bounded review completed; no future wait or additional jobs.
+
+## 2026-09-07 12:00–12:04 UTC — bounded review
+
+Read both required documents first; initial git status empty. Paper/read-only
+scope maintained: no agents, trading keys, real orders, restarts, configuration
+or scheduler changes. Only documentation/evidence written. Evidence files:
+`data/reviews/20260907T120000Z-{review.md,audit.json,account-check.json}`.
+
+All six services active, NRestarts=0: primary PID 23503 since 02:22:31,
+confirmed 23560 since 02:23:12, scores 6664 since Sep 6 21:13:37,
+annual 25696 since 02:58:57, legacy REST/WS 670/672 since Sep 6 20:25:26.
+Disk 16G/48G used, 32G free (33%). S3 journal confirms success 12:00:20,
+124 objects/19,459,128,930 bytes; remote object integrity not checked.
+Read paper_report.py and executed it at 12:00:24: no warnings, score age
+1.6s, discovery 42.5s, heartbeat 111.4s. Both accounts zero watched matches,
+legs, positions and locked cash. Both feed_ready=false after previously
+recorded idle disconnects; no new reconnect/errors since 10:00 in primary,
+confirmed, scores or legacy REST/WS file logs. Future subscription recovery
+still unobserved. Quiet overnight books do not establish a dead feed.
+
+Streamed primary 56,041 complete raw records (8 snapshots/56,033 deltas),
+epochs 1788747770.4179873–1788753040.1977906, zero connection/sid sequence gaps,
+max interval 1070.488s. Annual: 55 catalogs/subscriptions, 1,485 snapshots,
+2,061 deltas through 1788782346.1373408, zero sequence gaps; max interval
+600.486s. One historical capture_error remains (08:17, documented previously),
+no additional error count; current 27/27 snapshots ready. Legacy streamed
+5,409,814 records through 1788751910.349; max gap 113.464s; sequence validation
+not performed for legacy schema. All active gzip streams end in EOF after
+complete records, not finalized archives. Legacy WS idle heartbeats continue
+through 12:00:32; REST labels Sep 8 TIAMIC/SHEALC as live, not current play.
+REST orderbook/trades files grew to 1,800,351/1,513,661 bytes, ages 2.9/32.2s.
+Late audit discovery age 6.1s, zero started/groups, 12 future main-tour matches,
+next 15:00 UTC. All eight Sep 6 score rows closed, individually received
+3.4–55.4s earlier and present in primary logs. Older retained scores may be
+stale outside polling selection; global freshness is not source-event latency.
+No newly missed match/false positive identified; no independent full draw census.
+
+Both directories have zero new actions of any kind since 10:00. Recomputed
+baseline analysis: primary 7 inferred fills/741 contracts, three REST-price-absent
+misses, short $5.530265 and qualifier $5.81; confirmed one 47-contract fill,
+$0.43. All durable account JSON parses, positions empty and totals consistent.
+Michelsen/Pegula entries precede ended receipt by 658.049/1385.082s; Navarro
+broad precedes by 73.740s, confirmed follows by 0.471s. These are score-receipt
+comparisons, not independently measured last-point timestamps. Separate accounts
+cannot sum overlapping liquidity. No new settlement to compare; previous
+Navarro published-result recognition versus exchange cash settlement remains
+an unresolved simulator limitation, not newly rechecked against public REST.
+Recomputed five qualifier costs with cent-ceiling quadratic fees: all match
+($0.09/$0.07/$0.27/$0.02 broad, $0.04 confirmed). Read both fill paths and
+PaperLiquidity: delayed active/unresolved REST exact-price depth, current WS
+and remaining-depth minimum, conservative resnapshots, save before action log.
+Short fees still unrounded; parent directory not fsynced, account/log not one
+transaction, intervening depth not continuously durable. No crash injection.
+13 support unittests and full test_winner_taker.py passed; existing unclosed
+config ResourceWarning persists. No narrow production fix justified this interval.
+
+Annual catalog remains 27 contracts; 15 player UUIDs match score cache, 12
+prospective joins unverified. Reopened official AO Alcaraz/Rybakina, RG
+Zverev/Andreeva and WTA Wimbledon Noskova sources linked in 04:00 notes.
+ATP Wimbledon page returned a tool internal error; official dated July 12
+[Wimbledon Sinner champion gallery](https://www.wimbledon.com/en_GB/gallery/jannik_sinner_champion)
+provided replacement evidence. Six distinct current-year pre-USO singles
+champions, only USO remaining: annual active status never implies zero titles.
+Read both archived PDFs fully again. TENNISMAJOR counts singles after issuance;
+NO may retain capital to year-end/latest Jan 7 2027 plus settlement/review.
+NEWACHIEVEMENT includes elimination/withdrawal, cancellation fractional payout,
+postponement/suspension up to two years and review contingencies. Do not transfer
+after-issuance condition into the distinct Alcaraz product's explicit year terms.
+KXGRANDSLAM-CALC26-2 remains active/unresolved, at least two in 2026, UUID
+527915ea-e368-4c7f-a203-c83ebb6f6572 matches scores, bid/ask 57/59c. Already
+AO champion; USO needed for second under normal completion. Expected expiry
+Sep 15 14:00Z, close/latest Sep 29 14:00Z, 300s timer do not guarantee release.
+No annual paper promotion or fill; complete per-contract promotion gate remains.
+
+Operational limitations: review_result=success still reflects current systemd
+Result, not durable proof previous review completed; known 06:00 usage failure
+retained. Scheduler untouched. Broad /tmp filename search produced permission
+denials for systemd-private directories; relevant existing audit/PDF resources
+were found and read. No credentials printed/accessed. Commit/push outcome will
+be recorded by execution and final response.
+
+Handoff: maintain experiment, current primary process only ~9h40m, not >=24h.
+Earliest current primary/confirmed process checkpoints Sep 8 02:22/02:23 UTC,
+annual 02:59. Idle socket disconnects remain documented; verify new subscriptions
+and snapshots when matches resume, then completion timing, missed depth and
+settlement/cash lag. One bounded review; no sleep for matches or additional jobs.
