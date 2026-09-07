@@ -926,3 +926,102 @@ Five notification tests pass, including transient refresh versus real stall,
 recovery and immediate disk warning despite simultaneous snapshot wait.
 No trading/collector changes. Queue delivery and automatic investigation now
 observed end to end.
+# 2026-09-07 18:00–18:04 UTC bounded review
+
+Initial worktree clean at d42efa7. Read RUN_NOTES.md and READINESS.md first;
+truncated combined output was followed by targeted reads. No agents, trading
+keys, real orders, restarts, strategy/configuration/scheduler changes or new jobs.
+Evidence: `20260907T180000Z-{audit,completion,account-check,final-health}.json`.
+
+All six paper/score/related/legacy services active, NRestarts=0. Primary PID
+23503 since 02:22:31, confirmed 23560 since 02:23:12, score 6664 since Sep 6
+21:13:37, annual 25696 since 02:58:57, REST/WS 670/672 since Sep 6 20:25:26.
+Disk 16G/48G, 32G free (33%). S3 completed 18:00:21, 124 objects,
+19,459,131,452 bytes; remote integrity/current-file completeness unverified.
+Unrelated control service remains auto-restarting; outside scope, unchanged.
+Read and executed paper_report.py: no warnings, final score/discovery ages
+1.0/1.4s. Its review_result still reflects current systemd state, not durable
+previous-review success; known 06:00 usage failure remains historical.
+
+Streamed 1,398,708 primary records (112 snapshots, 1,398,596 deltas), through
+1788804065.7385483; zero per-connection/sid sequence gaps. Since 16:00 maximum
+record interval 6.205s; full-day 37,488s gap is documented overnight idle.
+Annual: 90 catalogs/subscriptions, 2,430 snapshots, 4,651 deltas, through
+1788804010.1241343, no sequence gaps, max interval 600.486s, only historical
+08:17 capture_error. Current 27/27 snapshots ready. Legacy WS: 9,469,373 deltas,
+136,258 trades, 322 snapshots through 1788804122.978; legacy sequence validation
+not performed. Open gzip EOF follows complete records, not finalized archives.
+REST book/trade sizes 3,552,946/3,648,961 bytes, ages 1.0/17.6s. No new primary,
+confirmed, score or REST errors since 16:00; legacy ticker-set reconnect
+17:25:43.725 only. No new sequence/API error observed.
+
+New broad results since 16:00: seven REST-verified speculative fills, 303
+contracts, median decision-to-fill 145.001ms; two REST-price-absent misses.
+- Andreeva QUAR YES 26 @99c, 17:32:37.952, 233.058s before first ended receipt.
+- Swiatek WIN NO 91 @YES 3c and FIN NO 10 @6c at 17:35:20; QUAR NO
+  10 @10c at 17:35:22, 19 @8c at 17:36:29. These four are model-edge signals,
+  262–331s before ended, not inferred-elimination signals.
+- Zheng QUAR YES 26 @99c at 17:38:22.468, 148.564s before ended.
+- Swiatek QUAR NO 121 @YES 2c at 17:38:23.503, 147.529s before ended.
+The other three entries are book-inferred. No new confirmed fills or settlement
+in either directory. Andreeva won 5-7, 6-4, 6-3 (first ended 1788802591.0103912);
+Zheng won 7-5, 6-3 (1788802851.032236). IDs match decision score context.
+Receipt comparisons are not independently measured last-point latency. No new
+losing filled signal; successful outcomes do not validate early entries as safe.
+
+Reconstructed six relevant books across snapshots/connections: immediately before
+and for five minutes after ended receipt, AND/ZHE QUAR had no asks; POT WIN and
+SWI WIN/FIN/QUAR had no YES bids. This supports confirmed zero fills for these
+inspected legs, not a claim of exhaustive market coverage. Public unauthenticated
+GETs of all six plus Alcaraz succeeded; all active/unresolved. Held positions
+correctly remain pending, not booked as new profit. Total broad now 14 fills /
+1,044 contracts; realized unchanged $5.530265 short and $5.81 qualifier.
+Three short positions lock $242.73; two qualifier positions cost $51.52.
+Confirmed remains flat with one historical fill / $0.43. Counterfactual accounts
+must not sum overlapping liquidity.
+
+Recomputed each open short count/cash/collateral from actions: all match durable
+JSON. Short cash: WIN $2.544633, FIN $0.56052, QUAR $4.6131. All seven historical
+and new qualifier costs match cent-ceiling quadratic fees; new fees $0.02 each,
+cost $25.76 each. Read fill/settlement/persistence paths: delayed exact-price
+public REST + current WS + remaining ledger minimum, consumed levels retained
+across snapshots. Known limitations remain: short fee unrounded; file fsync but
+no parent-directory fsync; account/log not transactional (short logs before save,
+qualifier saves before log); intervening depth not continuously durable; published
+result recognition can release paper cash before actual exchange settlement.
+No corruption observed or crash injected. No production fix justified this run.
+13 support tests and full winner_taker test script pass; existing unclosed config
+ResourceWarning persists. diff whitespace check performed before commit.
+
+Coverage: all ten closed Sep6-key score events in primary logs; individual ages
+2.1–46.4s. CERBLO watched 16:15:03, marked IN PLAY 17:50:30, but score source
+still says not_started on fresh (~1s) receipt at final check. This source-status
+lag is unresolved and can delay confirmed entries; global cache freshness is
+not proof of actual score freshness. OSARYB preroll watched/subscribed primary
+18:00:48, confirmed 18:01:14/15; heartbeat count lag reflects two-minute reporting.
+No discovered eligible match omission established; independent draw census and
+missing Blockx qualifier listing verification remain outside this bounded audit.
+
+Annual remains capture-only, 27 contracts, 15 exact UUID joins, 12 unverified.
+Reopened official sources linked in the 04:00 notes: 2026 AO Alcaraz/Rybakina,
+RG Zverev/Andreeva, Wimbledon Sinner/Noskova. These are current-year pre-USO
+singles titles, not prior-calendar-year/career totals. Only USO remains; active
+annual listings never imply no prior major. Read both archived PDFs fully:
+TENNISMAJOR counts singles after issuance and annual NO may retain capital until
+year-end/latest Jan7 2027 plus review. Alcaraz KXGRANDSLAM-CALC26-2 public rules
+say at least two in 2026, UUID 527915ea-e368-4c7f-a203-c83ebb6f6572 matches scores;
+already AO champion, thus needs USO under normal completion. Its specific annual
+terms differ from TENNISMAJOR after-issuance terms. Expected Sep15/close Sep29
+14:00Z, 300s timer are not cash-release guarantees. NEWACHIEVEMENT elimination,
+withdrawal, fractional cancellation, up-to-two-year postponement and review
+contingencies still require complete promotion review. No annual promotion/fill.
+
+Operational failure: one local output formatter assumed discovery groups were
+objects and raised AttributeError after displaying audit sections; corrected by
+printing actual nested-list schema. Audit itself completed successfully. No
+execution/auth failure in public checks/tests; commit/push outcome follows.
+Handoff: maintain experiment (~15h40m primary process, not >=24h). Earliest current
+primary/confirmed process checkpoints Sep8 02:22/02:23, annual 02:59, not claims
+of uninterrupted sockets. Next review: pending five positions, CERBLO source
+score lag, new preroll matches, and confirmed executable depth. Exit now without
+waiting for matches or changing scheduler.
