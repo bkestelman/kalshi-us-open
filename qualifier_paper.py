@@ -67,6 +67,8 @@ class QualifierPaper:
         if mb is None or wb is None:
             return None
         confirmed = score['state'] == 'won'
+        if owner.cfg['require_score_confirmation'] and not confirmed:
+            return None
         inferred = ((leg.tour, leg.key) in owner.disc.started
                     and mb.bid() is not None and mb.bid() >= .99 and mb.ask() is None)
         if not (confirmed or inferred):

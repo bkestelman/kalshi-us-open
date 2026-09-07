@@ -182,6 +182,7 @@ DEFAULTS = {
     "max_take": 500,            # contracts per order
     "paper_latency_ms": 100.0,  # decision to simulated arrival; measured separately
     "paper_verify_rest": True, # reject frozen/closed books and validate displayed depth
+    "require_score_confirmation": False, # comparison experiment; no inferred entries
     # Housekeeping only -- R sampling, config reload, the observation log.
     # Entries are NOT on a timer: they fire on the book update that creates
     # them, because alloc_study measured every delay as a straight loss.
@@ -814,6 +815,8 @@ class WinnerTaker:
             return None, 'score-confirmed-winner'
         confirmed = (score['state'] == 'lost'
                      and future_round(score.get('round'), tk))
+        if self.cfg['require_score_confirmation'] and not confirmed:
+            return None, 'awaiting-score-confirmation'
         if score.get('round') and not future_round(score['round'], tk):
             return None, 'not-future-round'
         # ELIMINATED. When a match ends, the loser's match book goes one-sided
@@ -977,7 +980,7 @@ class WinnerTaker:
             await asyncio.sleep(self.cfg["sample_every"])
             try:
                 self.cfg.reload()
-                score_path = os.path.join(OUT, 'tennis_scores.json')
+                score_path = os.environ.get('TENNIS_SCORE_CACHE', os.path.join(OUT, 'tennis_scores.json'))
                 if os.path.exists(score_path):
                     try:
                         with open(score_path) as f:
@@ -1498,6 +1501,7 @@ class WinnerTaker:
                 'feed_ready': self.feed_ready, 'last_message_at': self.last_message_at,
                 'messages': self.msgs, 'matches': len(self.groups), 'legs': len(self.legs),
                 'takes': self.takes, 'locked': self.locked(), 'realized': self.realized,
+                'require_score_confirmation': self.cfg['require_score_confirmation'],
                 'qualifier_takes': q.takes if q else 0,
                 'qualifier_locked': sum(p['cost'] for p in q.positions.values()) if q else 0,
                 'qualifier_realized': q.realized if q else 0})

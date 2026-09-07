@@ -2,6 +2,37 @@
 import time
 
 
+def confirmed_winner(score, best_of):
+    """Return a mapped winner from a final result, including pre-close ended data.
+
+    The feed reports status=ended with a complete score roughly two minutes
+    before status=closed. Require a normal completed best-of-three/five score
+    for that early result. Closed results also cover retirements.
+    """
+    ids = [score.get('competitor1_id'), score.get('competitor2_id')]
+    winner = score.get('winner')
+    if not all(ids) or ids[0] == ids[1] or winner not in ids:
+        return None
+    if score.get('match_status') != 'ended':
+        return None
+    if score.get('status') == 'closed':
+        return winner
+    if score.get('status') != 'ended':
+        return None
+    try:
+        best_of = int(best_of)
+        sets = [int(score[f'competitor{i}_overall_score']) for i in (1, 2)]
+    except (ValueError, TypeError, KeyError):
+        return None
+    if best_of not in (3, 5):
+        return None
+    target = best_of // 2 + 1
+    winner_index = ids.index(winner)
+    if sets[winner_index] == target and 0 <= sets[1 - winner_index] < target:
+        return winner
+    return None
+
+
 def future_round(round_name, ticker):
     """A loss in this round must make the target qualification impossible."""
     if 'ADVANCE-' not in ticker:
@@ -42,7 +73,7 @@ def context(matches, match_ticker, now=None):
     if not 0 <= result['received_age_s'] <= 90:
         result['state'] = 'stale'
         return result
-    winner = score.get('winner')
-    if winner in ids and score.get('status') == 'closed' and score.get('match_status') == 'ended':
+    winner = confirmed_winner(score, snapshot.get('best_of'))
+    if winner:
         result['state'] = 'won' if winner == player else 'lost'
     return result

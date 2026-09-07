@@ -1,0 +1,18 @@
+[Unit]
+Description=Tennis score-confirmed PAPER comparison (never places orders)
+After=network-online.target tennis-scores.service
+Wants=network-online.target
+
+[Service]
+User=@USER@
+WorkingDirectory=@HOME@/kalshi-us-open
+Environment=KALSHI_DATA=@HOME@/kalshi-us-open/data/confirmed
+Environment=TENNIS_SCORE_CACHE=@HOME@/kalshi-us-open/data/live/tennis_scores.json
+ExecStart=/usr/bin/python3 @HOME@/kalshi-us-open/winner_taker.py paper
+Restart=always
+RestartSec=10
+StandardOutput=append:@HOME@/kalshi-us-open/data/confirmed/stdout_paper.log
+StandardError=inherit
+
+[Install]
+WantedBy=multi-user.target

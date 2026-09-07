@@ -10,7 +10,7 @@ os.environ['KALSHI_DATA'] = tempfile.mkdtemp(prefix='paper-support-test-')
 import winner_taker as W
 from kalshi import Book
 from paper_support import PaperLiquidity, rest_quantity
-from score_context import context, future_round
+from score_context import context, future_round, confirmed_winner
 from qualifier_paper import QualifierPaper, secured_ticker
 
 
@@ -117,6 +117,24 @@ class PaperTests(unittest.TestCase):
         self.assertFalse(secured_ticker('Round Of 16', 'KXWTAADVANCE-26USOFIN-NOS'))
         self.assertFalse(secured_ticker('Round Of 16', 'KXWTA-26USO-NOS'))
         self.assertTrue(secured_ticker('Final', 'KXWTA-26USO-NOS'))
+
+    def test_ended_final_score_does_not_wait_for_closed(self):
+        score = {'competitor1_id': 'a', 'competitor2_id': 'b', 'winner': 'b',
+                 'status': 'ended', 'match_status': 'ended',
+                 'competitor1_overall_score': 0, 'competitor2_overall_score': 3}
+        self.assertEqual(confirmed_winner(score, '5'), 'b')
+        score['competitor2_overall_score'] = 2
+        self.assertIsNone(confirmed_winner(score, '5'))
+        self.assertEqual(confirmed_winner(score, '3'), 'b')
+        score['winner'] = 'a'
+        self.assertIsNone(confirmed_winner(score, '3'))
+
+    def test_confirmation_only_variant_rejects_inferred_books(self):
+        b, l = self.make_bot()
+        b.cfg.v['require_score_confirmation'] = True
+        b.books[l.match_tk].yes.clear()
+        b.books[l.match_tk].no = {.99: 1000}
+        self.assertEqual(b.evaluate(l)[1], 'awaiting-score-confirmation')
 
     def test_rest_verification_rejects_closed_and_absent_liquidity(self):
         market = {'market': {'status': 'active', 'result': ''}}

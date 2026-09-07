@@ -125,10 +125,12 @@ claim that every size was executable at the first timestamp. Raw audit output:
 `data/research/validated_signal_episodes.json`; reproduce with `replay_signals.py`.
 
 Discovery skipped matching related legs for matches already being watched.
-At 21:23, Pegula SEMI was listed and correctly matched by a fresh discovery
-instance but was absent from the running bot's three Pegula legs. Added a
+Added a
 refresh path that adds newly available legs while preserving existing R and
 match identity. Existing matches are not re-announced as newly discovered.
+Correction after reviewing the full logs: the earlier claim that Pegula SEMI
+was absent was a reading error; it was already subscribed. The refresh fixes
+a real missing code path, but Pegula is not evidence of a realized omission.
 
 ## Execution verification
 
@@ -149,3 +151,56 @@ manual 200-contract Noskova fill paid $0.138600; its subsequent 5- and
 Winner-side paper currently rounds fees conservatively to whole cents;
 short-side uses the original unrounded model. Harmonizing this remains before
 live readiness, though the monetary discrepancy is below a cent per order.
+
+## Overnight review — September 7, 02:17 UTC
+
+Service PID 9306 stayed running from 21:28:44 on September 6. Both collectors
+and the minute monitor are healthy; no ongoing feed or score errors. The new
+paper window is **under five hours**, not a completed full-day validation.
+
+Six REST-verified fills, 720 contracts, five markets, three matches:
+
+| Trade | Contracts | YES price | Settled paper profit |
+|---|---:|---:|---:|
+| Buy Michelsen QUAR YES | 126 | 99c | $1.17 |
+| Sell Medvedev QUAR YES | 33 + 335 | 7c, 1c | $5.28 |
+| Sell Medvedev SEMI YES | 3 | 9c | $0.25 |
+| Buy Tiafoe QUAR YES | 95 | 99c | $0.88 |
+| Buy Pegula QUAR YES | 128 | 97c | $3.57 |
+
+Short account: $5.530265; winner account: $5.62. All positions settled.
+These remain independent research accounts, not a shared-$500 return.
+Median decision-to-paper-fill time was 152.8 ms including the 100 ms delay
+and REST validation. Three other attempts returned no fill because the exact
+price was absent from REST; the Medvedev 7c attempt partially filled 33 of
+100 displayed contracts. This shows the simulation is now exercising misses
+and partial fills rather than blindly counting every displayed quote.
+
+**All six entry signals were book-inferred.** Michelsen was taken 658 seconds
+before the first ended score, Pegula 1,385 seconds before. Their recorded
+scores were 2 sets to 0 / 4–3 and 1 set to 0 / 4–1, respectively: these are
+speculative entries, not proven post-match opportunities. Medvedev/Tiafoe fills
+were 10–11 seconds before the first ended score, much closer to the desired
+last-point window. Winning outcomes do not prove the inference safe.
+
+Found and fixed confirmation latency: the feed first reports `status=ended`,
+an explicit winner and complete set score, then reports `status=closed` about
+118–130 seconds later. We wrongly required closed. The early ended result now
+qualifies when winner ID and completed best-of-three/five set totals agree.
+Closed results retain support for retirement outcomes.
+
+The delayed confirmation mattered: Pegula QUAR observations still showed an
+ask of 99c 7 and 67 seconds after the first ended result, and no ask by the
+time the old closed-only gate fired. Ask quantity was not in the old observation
+schema, so these observations establish a missed candidate, not a fill size.
+
+Starting a separate `winner-taker-confirmed-paper.service` in `data/confirmed`
+with `require_score_confirmation=true` and the same local score cache. It will
+compare strictly confirmed entries against the existing broad book-driven
+research account without rewriting historical results or borrowing liquidity.
+Both strategies remain paper-only. Before any live deployment, inferred trades
+must have explicit probability/edge justification and risk caps; the legacy
+short-side inferred path's fair=0 and cap exemption are not validated.
+
+Reproduce the review with:
+`python3 analyze_paper_run.py --since 2026-09-06T21:28:44Z`.
