@@ -913,3 +913,16 @@ queueing, not yet consumption by the current conversation. Automatic responses
 still depend on the session/runtime being available and model usage capacity;
 queue delivery cannot remove those limits. Crash between successful queueing
 and durable acknowledgment can duplicate a message (at-least-once delivery).
+
+## 2026-09-07 17:43 UTC — automatic snapshot-wait alert investigated
+
+Alert was delivered to the original thread without user prompting. Related
+collector was already recovered: active, PID25696, connection89, all27
+snapshots, feed_ready true, fresh heartbeat. No review worker active and no
+restart needed. Minute report caught routine ten-minute subscription refresh.
+Added 120-second persistence requirement ONLY for related snapshot-wait chat
+alerts; raw monitor warning remains recorded, and other warnings are immediate.
+Five notification tests pass, including transient refresh versus real stall,
+recovery and immediate disk warning despite simultaneous snapshot wait.
+No trading/collector changes. Queue delivery and automatic investigation now
+observed end to end.

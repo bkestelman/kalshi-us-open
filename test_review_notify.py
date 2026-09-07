@@ -36,6 +36,29 @@ class NotificationTests(unittest.TestCase):
         health_event(state, {'warnings': []}, 3920)
         self.assertEqual(len(state['pending']), 3)
 
+    def test_subscription_refresh_does_not_alert_but_stall_does(self):
+        state = {'pending': {}, 'sent': {}}
+        wait = 'related-market collector awaiting snapshots: '
+        health_event(state, {'warnings': [wait]}, 1000)
+        health_event(state, {'warnings': []}, 1060)
+        self.assertFalse(state['pending'])
+        health_event(state, {'warnings': [wait]}, 1200)
+        health_event(state, {'warnings': [wait]}, 1260)
+        self.assertFalse(state['pending'])
+        health_event(state, {'warnings': [wait]}, 1320)
+        self.assertEqual(len(state['pending']), 1)
+        health_event(state, {'warnings': []}, 1380)
+        self.assertEqual(len(state['pending']), 2)
+
+    def test_critical_alert_not_delayed_by_snapshot_wait(self):
+        state = {'pending': {}, 'sent': {}}
+        health_event(state, {'warnings': ['related-market collector awaiting snapshots: ',
+                                         'less than 2 GiB disk free']}, 1000)
+        self.assertEqual(len(state['pending']), 1)
+        message = next(iter(state['pending'].values()))
+        self.assertIn('disk free', message)
+        self.assertNotIn('awaiting snapshots', message)
+
     def test_timeout_retains_pending(self):
         state = {'pending': {'test': 'hello'}, 'sent': {}}
         def timeout(*a, **k):

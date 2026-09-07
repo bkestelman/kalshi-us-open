@@ -43,7 +43,15 @@ def deliver(state, save, runner=subprocess.run):
 
 
 def health_event(state, report, now):
-    warnings = sorted(report.get('warnings', []))
+    raw_warnings = sorted(report.get('warnings', []))
+    # Routine ten-minute subscription refreshes briefly await snapshots.
+    # Keep raw monitor evidence, but alert only for a persistent snapshot wait.
+    waits = state.setdefault('snapshot_wait_since', {})
+    current_waits = {w for w in raw_warnings
+                     if w.startswith('related-market collector awaiting snapshots:')}
+    waits = {w: waits.get(w, now) for w in current_waits}
+    state['snapshot_wait_since'] = waits
+    warnings = [w for w in raw_warnings if w not in waits or now - waits[w] >= 120]
     previous = state.get('health_warnings', [])
     if warnings and (warnings != previous or now - state.get('health_sent_at', 0) >= 1800):
         enqueue(state, 'health:'+str(int(now)),
