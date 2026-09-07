@@ -1187,3 +1187,26 @@ will provide actual execution evidence. Live service has Restart=no.
 The literal ~/trade-key paths are read by the isolated single-attempt pilot
 transport; keys were not copied into repo or shared with paper collectors.
 No cap expansion or model-edge/annual live entry enabled.
+
+## 2026-09-07 21:27 UTC — first live fill and ambiguous second submission
+
+Automatic alert reached original conversation. Live ledger contains a confirmed
+5-contract Rybakina QUAR YES fill at99c (21:14:00.329844 UTC). Signed exchange
+orders/fills both confirm order01a07db8-85c0-7e24-9519-c2abbe2bf4b7 executed5;
+fill fee_cost0.003500 (raw exchange trade-fee field; do not infer final rounded
+cash movement from that alone). Pilot reservation remains4.96.
+
+Second intent: Cerundolo FIN sellYES5 at1c, client ID
+tennis-pilot-00356a62-278e-4269-abd6-630424c09599, returned RemoteDisconnected.
+Full4.96 reservation retained, global entry paused; total allocation9.92.
+Direct signed ticker-filtered orders and fills both200 with empty lists/cursor
+for CER FIN. Absence does not prove rejection, so did not clear intent or retry.
+No review worker active; local ledger unchanged by investigation.
+
+Likely stale HTTP keepalive after roughly12-minute quiet interval between
+submissions. Added pre-send idle socket discard after15s inactivity on the
+specific transport thread. Fresh connection created before POST; no retry added.
+Regression test verifies discard precedes exactly one send. All12 pilot tests
+pass. This fixes an avoidable transport failure mode but cannot retroactively
+establish the uncertain order outcome. Reconciliation and conservative pause
+remain in force, pending terminal exchange evidence. No cap/strategy change.

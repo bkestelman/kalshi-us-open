@@ -70,6 +70,21 @@ class ExecutionTests(unittest.TestCase):
             with self.assertRaises(OSError):
                 self.ledger.prepare(c())
 
+    def test_idle_connection_discarded_before_post_not_retried(self):
+        from pilot_execution import request
+        events = []
+        response = SimpleNamespace(status=201, read=lambda: b'{}')
+        conn = SimpleNamespace(request=lambda *a, **k: events.append('send'),
+                               getresponse=lambda: response)
+        with patch('pilot_execution._load', return_value=('id', 'priv')), \
+             patch('pilot_execution.sign', return_value={}), \
+             patch('pilot_execution._connection', return_value=conn), \
+             patch('pilot_execution._request_clock', SimpleNamespace(last=0)), \
+             patch('pilot_execution.time.monotonic', return_value=100), \
+             patch('pilot_execution._drop', side_effect=lambda: events.append('drop')):
+            request('POST', '/test', {})
+        self.assertEqual(events, ['drop', 'send'])
+
     def test_single_attempt_post_on_transport_failure(self):
         from pilot_execution import request
         conn = SimpleNamespace(request=__import__('unittest.mock').mock.Mock(side_effect=TimeoutError()))

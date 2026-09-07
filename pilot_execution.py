@@ -5,12 +5,14 @@ import os
 from pathlib import Path
 import uuid
 import time
+import threading
 
 from kalshi import API, _load, sign, _connection, _drop
 from paper_support import atomic_json
 
 D = lambda x: Decimal(str(x))
 PREFIX = 'tennis-pilot-'
+_request_clock = threading.local()
 
 
 def request(method, path, body=None):
@@ -19,10 +21,15 @@ def request(method, path, body=None):
     headers = sign(priv, key_id, method, path)
     headers['Content-Type'] = 'application/json'
     try:
+        # A quiet tennis interval can outlive the server's HTTP keepalive.
+        # Discard an idle socket BEFORE sending; never retry a failed POST.
+        if method == 'POST' and time.monotonic() - getattr(_request_clock, 'last', 0) > 15:
+            _drop()
         conn = _connection()
         conn.request(method, path, body=json.dumps(body) if body else None, headers=headers)
         response = conn.getresponse()
         raw = response.read()
+        _request_clock.last = time.monotonic()
         return response.status, json.loads(raw) if raw else None
     except Exception as exc:
         _drop()
