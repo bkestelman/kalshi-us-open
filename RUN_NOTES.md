@@ -1025,3 +1025,15 @@ primary/confirmed process checkpoints Sep8 02:22/02:23, annual 02:59, not claims
 of uninterrupted sockets. Next review: pending five positions, CERBLO source
 score lag, new preroll matches, and confirmed executable depth. Exit now without
 waiting for matches or changing scheduler.
+
+### 18:04 UTC automatic follow-up on CERBLO score lag
+
+Original conversation received scheduled review automatically. Checked fresh
+collector cache and independently GET /live_data/milestone/ccf0ac5b-92a8-47b6-9c2d-36af74664963:
+both return not_started with empty round scores and matching player UUIDs.
+Thus the missing score is present at the upstream individual endpoint too,
+not merely a stale local cache or batch-only parsing failure. This does not
+independently establish the actual first-ball time. Current health warnings
+empty; review worker exited; no collector restart justified. Book-driven
+paper path remains available; confirmation-only path must wait for valid score
+evidence. Seven new speculative fills remain pending per 18:00 review.
