@@ -15,7 +15,7 @@ only for a future round/tournament win. No model-edge entries. Cached valid
 score identity and round are required; final-score confirmation is not. Cached
 confirmed contradictory outcomes veto. Annual markets remain capture-only.
 
-Live limits are cumulative $25 total and $5 per MATCH EVENT, including estimated
+Live limits are cumulative $250 total and $50 per MATCH EVENT, including estimated
 rounded fees and both players/all legs. Filled orders retain their full requested
 allocation even on partial fills or settlement. The pilot does not automatically
 recycle budget. One filled order per market. Shadow has $500/$125 limits; broad

@@ -1,7 +1,7 @@
 # kalshi-us-open
 
 A user-authorized **live pilot** now runs alongside the paper experiments. See
-[PILOT.md](PILOT.md) for shared live/shadow strategy, cumulative $25 total/$5 per
+[PILOT.md](PILOT.md) for shared live/shadow strategy, cumulative $250 total/$50 per
 match limits, and the ten-minute-plus-three-check ambiguity cutoff. Minute
 health checks continue; unchanged alert reminders are limited to once per12h.
 

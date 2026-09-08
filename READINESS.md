@@ -2,7 +2,7 @@
 
 **Current status, 2026-09-07 20:12 UTC: user-authorized capped live pilot is running.**
 The broad strategy remains paper-only. [PILOT.md](PILOT.md) describes the shared
-live/shadow strategy, cumulative $25 total/$5 per match limits, and durable
+live/shadow strategy, cumulative $250 total/$50 per match limits, and durable
 ambiguous-order reconciliation. The historical readiness findings below still
 apply to broader deployment, not an authorization to expand this pilot.
 The dated [RUN_NOTES.md](RUN_NOTES.md) supersede the historical checklist below.

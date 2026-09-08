@@ -24,8 +24,8 @@ class Pilot(WinnerTaker):
         super().__init__(False)  # Reuse discovery/feed only, never legacy live executor.
         self.live = live
         self.disc = FollowerDiscovery(str(SHARED / 'winner_taker_discovery.json'))
-        self.ledger = Ledger(Path(OUT)/'pilot_ledger.json', 25 if live else 500,
-                             5 if live else 125)
+        self.ledger = Ledger(Path(OUT)/'pilot_ledger.json', 250 if live else 500,
+                             50 if live else 125)
         self.started_at = time.time()
         self.busy = False
         self.retry = {}
@@ -110,8 +110,8 @@ class Pilot(WinnerTaker):
         if self.live:
             # Read-only signed account validation; never use a test order.
             status, balance = await asyncio.to_thread(request, 'GET', API+'/portfolio/balance')
-            if status != 200 or not isinstance(balance, dict) or balance.get('balance', 0) < 2500:
-                raise RuntimeError('account read failed or less than $25 available')
+            if status != 200 or not isinstance(balance, dict) or balance.get('balance', 0) < int(self.ledger.per_match * 100):
+                raise RuntimeError('account read failed or available cash below per-match cap')
             cursor = None
             for _ in range(100):
                 from urllib.parse import urlencode

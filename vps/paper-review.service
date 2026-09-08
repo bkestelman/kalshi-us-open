@@ -1,5 +1,5 @@
 [Unit]
-Description=Two-hour Codex review of tennis paper simulation
+Description=Twelve-hour Codex review of tennis paper simulation
 After=network-online.target
 Wants=network-online.target
 

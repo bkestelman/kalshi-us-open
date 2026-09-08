@@ -1505,3 +1505,18 @@ Zero interval actions/fills/settlements in both broad/confirmed and both pilots;
 Annual27 capture-only. Cached Alcaraz >=2 inspected: unchanged July13/calendar2026, UUID527915ea-e368-4c7f-a203-c83ebb6f6572, expectedSep15/closeSep29 14:00Z,timer300. Prior verified AO title and major history carried forward; USO can supply second title, active does not imply zero prior majors. No unchanged external refetch/new identity/history claim or promotion. Prior12 identity gaps, Sinner source refetch, after-issuance interpretation/possible Jan7 cash lock remain promotion blockers.
 
 Saved20260908T100000Z-summary.json,-exchange.json,-review.md. Audit-only log-filter/positions-key corrections documented in report; no production changes, Ledger saves, test orders, restarts, scheduler edits or agents. Unchanged suites not rerun. Handoff preserve experiment/cumulative budgets/tombstone monitoring; next timer reviews next activity. Notes/report commit and push follows.
+
+## 2026-09-08 — user raises live caps and changes review cadence
+
+User explicitly authorized $50 per match/$250 total and clarified reviews should
+run every12h. Raised live runner limits and CLI guard; existing ledger/used9.87
+allocation retained. Caps remain cumulative, include fees, shared across both
+players and all related legs. Preflight cash check covers one new match cap.
+Updated monitoring/reviewer scope and documentation. No trigger/reconciliation
+change. Timer now00:00/12:00 UTC; minute health checks remain, identical warning
+reminders12h, new failures immediate. Earlier change affected only alert reminders,
+not review timer; explained distinction and corrected timer now.
+
+20 pilot tests and5 notification tests pass, including raising limits on an
+existing ledger without resetting used budget or exceeding either new cap.
+Deployment and live health verification follow; no paper restart needed.

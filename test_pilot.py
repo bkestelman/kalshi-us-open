@@ -83,6 +83,19 @@ class ExecutionTests(unittest.TestCase):
         self.assertIsNone(self.ledger.prepare(c(match='sixth')))
         self.assertIsNone(self.ledger.prepare(c(match='0', side='bid')))
 
+    def test_authorized_cap_increase_preserves_used_budget(self):
+        row = self.ledger.prepare(c())
+        self.ledger.accept(row, {'order_id':'old', 'fill_count':'5'}, terminal=True)
+        expanded = Ledger(self.path, total=250, per_match=50)
+        self.assertEqual(expanded.used(), reserve_cost('bid', .99, 5))
+        for i in range(5):
+            row=expanded.prepare(c(match='new'+str(i)))
+            if row:
+                self.assertLessEqual(reserve_cost(row['side'],row['price'],row['count']),50)
+                expanded.accept(row, {'order_id':str(i),'fill_count':str(row['count'])}, terminal=True)
+        self.assertLessEqual(expanded.used(),250)
+        self.assertIsNone(expanded.prepare(c(match='beyond')))
+
     def test_malformed_and_nonterminal_responses_keep_reservation(self):
         row = self.ledger.prepare(c())
         for response in [{}, {'order_id': 'x'}, {'order_id': 'x', 'fill_count': '-1'},

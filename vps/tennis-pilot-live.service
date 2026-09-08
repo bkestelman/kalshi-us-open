@@ -1,5 +1,5 @@
 [Unit]
-Description=Tennis live pilot, cumulative $25 total and $5 per match
+Description=Tennis live pilot, cumulative $250 total and $50 per match
 After=network-online.target winner-taker-paper.service tennis-scores.service
 Wants=network-online.target
 
