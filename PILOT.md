@@ -28,9 +28,17 @@ submission is in flight. POST is attempted once, IOC only, taker_at_cross avoids
 canceling other resting orders. Missing/malformed/non-success responses remain
 UNRESOLVED with full allocation held; ALL further entries pause. Reconcile by
 client-order ID through fully paginated exchange orders. Only a terminal order
-with a valid fill count resolves the intent. Absence is NOT rejection and does
-not release risk. No automatic POST retry. Definitive failures not appearing in
-order history deliberately require investigation rather than automatic retries.
+with a valid fill count resolves the intent. An absent order is initially ambiguous, not a rejection. After at least10 minutes,
+three clean checks at least30 seconds apart (at least60 seconds total) can mark
+it not_found and release the allocation. All reads must succeed and paginate
+fully: current/historical orders as required by cutoff, recent fills, market
+positions and settlements. Exchange account watermark must be within60 seconds
+and beyond the ten-minute deadline. Any pending order, same-market fill or
+settlement, or nonzero exposure prevents release. Failed/stale reads reset clean
+evidence. This is a bounded operational inference, not mathematical proof.
+No automatic POST retry; a not_found market is not traded again by the pilot.
+Keep durable tombstones and check for late orders/fills/positions. Late evidence
+restores allocation and halts new entries for investigation. No cap increase.
 A restart loads the ledger and checks exchange pilot orders for missing local
 intents. Corruption or unknown historical pilot exposure stops startup.
 

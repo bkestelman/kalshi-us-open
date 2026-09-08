@@ -30,11 +30,11 @@ class NotificationTests(unittest.TestCase):
         health_event(state, {'warnings': ['stale score']}, 2000)
         health_event(state, {'warnings': ['stale score']}, 2060)
         self.assertEqual(len(state['pending']), 1)
-        health_event(state, {'warnings': ['stale score']}, 9200)
+        health_event(state, {'warnings': ['stale score']}, 45200)
         self.assertEqual(len(state['pending']), 2)
-        health_event(state, {'warnings': []}, 9260)
+        health_event(state, {'warnings': []}, 45260)
         self.assertEqual(len(state['pending']), 3)
-        health_event(state, {'warnings': []}, 9320)
+        health_event(state, {'warnings': []}, 45320)
         self.assertEqual(len(state['pending']), 3)
 
     def test_subscription_refresh_does_not_alert_but_stall_does(self):

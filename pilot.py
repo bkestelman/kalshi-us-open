@@ -38,7 +38,7 @@ class Pilot(WinnerTaker):
         return None, 'pilot-shared-strategy'
 
     def on_book(self, tk):
-        if self.busy or not self.account_ready or self.disabled_path.exists() or self.ledger.unresolved():
+        if self.busy or not self.account_ready or self.disabled_path.exists() or self.ledger.unresolved() or self.ledger.state.get('halt_reason'):
             return
         if time.time()-self.last_message_at > 30:
             return
@@ -51,7 +51,7 @@ class Pilot(WinnerTaker):
                 continue
             # One filled order per market/direction for this pilot. Prevents
             # shadow duplicate-depth fills and bounds repeated live attempts.
-            if any(o['ticker'] == leg.win_tk and o['status'] == 'filled'
+            if any(o['ticker'] == leg.win_tk and o['status'] in ('filled', 'not_found')
                    for o in self.ledger.state['orders'].values()):
                 continue
             c = candidate(self, leg)
@@ -137,7 +137,7 @@ class Pilot(WinnerTaker):
         while True:
             try:
                 self.scores = json.loads((SHARED/'tennis_scores.json').read_text()).get('matches', {})
-                if self.live and not self.busy and self.ledger.unresolved() and time.time()-self.last_reconcile > 10:
+                if self.live and not self.busy and time.time()-self.last_reconcile > 10:
                     self.last_reconcile = time.time()
                     self.busy = True
                     try:
@@ -149,7 +149,7 @@ class Pilot(WinnerTaker):
                           'messages': self.msgs, 'last_message_at': self.last_message_at,
                           'legs': len(self.legs), 'allocated': str(self.ledger.used()),
                           'total_cap': str(self.ledger.total), 'per_match_cap': str(self.ledger.per_match),
-                          'unresolved': len(self.ledger.unresolved()), 'error': self.last_error,
+                          'unresolved': len(self.ledger.unresolved()), 'error': self.last_error or self.ledger.state.get('halt_reason'),
                           'disabled': self.disabled_path.exists(), 'account_ready': self.account_ready,
                           'orders': len(self.ledger.state['orders'])}
                 atomic_json(str(Path(OUT)/'pilot_health.json'), health)

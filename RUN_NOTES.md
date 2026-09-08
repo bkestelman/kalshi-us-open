@@ -1257,3 +1257,41 @@ allocation including verified Rybakina fill. Direct signed orders read200,
 empty records/cursor still; no safe evidence to classify as rejected, no POST
 retry or ledger clearance. Feed healthy. Scheduled service retains failure
 status until a later successful review; no reset to conceal failures.
+
+## 2026-09-08 01:08 UTC — bounded ambiguous-order resolution authorized
+
+User requested live/paper summaries,12-hour health reminders, and a practical
+cutoff for unacknowledged submissions. Implemented ten-minute minimum followed
+by three clean scans spaced >=30s and spanning>=60s. Fully paginate ticker-
+filtered orders without status restriction; query historical orders/fills when
+created time crosses /historical/cutoff. Check fills since submission-minus60s,
+positions including nonzero fractional quantities/exposure, and settlements.
+Require /exchange/user_data_timestamp within60s and after ten-minute deadline.
+Any API error, malformed/missing pagination, stale watermark, matching nonterminal
+order, any same-market pending order/fill/settlement, or nonzero position blocks
+release and resets clean-scan evidence. This is an explicitly authorized bounded
+absence inference, not proof a missing response was rejected.
+
+Terminal matching orders still resolve from actual fill count. After clean
+cutoff, mark not_found (not rejected), preserve evidence/tombstone, release
+allocation and prohibit another attempt in that same market. Keep checking
+released intents for late order/fill/position evidence; restore risk allocation
+and halt if any appears. No POST retries or cap increase. Live remains paused
+with STOP until deployment verifies current Cerundolo intent passes the rule.
+
+Current live audit: Rybakina QUAR5YES at99c is executed and settledYES; exchange
+settlement revenue500c, yes_total_cost4.95, fee_cost0.003500, net reported0.0465
+(about5c; fractional fee does not independently expose balance rounding).
+Cerundolo FIN still has no order/position; it will be checked by the new rule.
+Broad paper currently20fills/1411contracts since Sep6 21:28:44; short realized
+16.620032 and winner-YES6.60, combined23.220032 across independent500 accounts.
+Open:1 Jovic FIN NO and20 Gauff QUAR YES (excluded from realized). Five attempted
+fills failed REST depth verification. Confirmed-only2fills/60contracts,0.55
+realized (Navarro47 and Rybakina13), flat. Pilot shadow had Rybakina34 and
+Cerundolo126 filled, then Jovic1 and Gauff20; not additive to broad/live depth.
+
+Unchanged health reminder interval now12h; new/changed warnings remain immediate
+and each scheduled-review result still delivered. Tests add clean cutoff timing,
+failed scan reset, stale watermark, fractional position, fills/settlements,
+historical coverage, pagination failure and late-fill halt; combined suite run
+recorded below. Primary paper processes need no restart for these changes.

@@ -53,7 +53,7 @@ def health_event(state, report, now):
     state['snapshot_wait_since'] = waits
     warnings = [w for w in raw_warnings if w not in waits or now - waits[w] >= 120]
     previous = state.get('health_warnings', [])
-    if warnings and (warnings != previous or now - state.get('health_sent_at', 0) >= 7200):
+    if warnings and (warnings != previous or now - state.get('health_sent_at', 0) >= 43200):
         enqueue(state, 'health:'+str(int(now)),
                 'AUTOMATED PAPER HEALTH ALERT (user-authorized monitoring): '+ '; '.join(warnings)+
                 '. Inspect data/live/paper_report.json and current service/log state now, investigate and fix '

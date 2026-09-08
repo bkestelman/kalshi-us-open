@@ -50,7 +50,7 @@ class Ledger:
         if self.state.get('version') != 1 or not isinstance(self.state.get('orders'), dict):
             raise ValueError('invalid pilot ledger')
         for key, row in self.state['orders'].items():
-            if (row.get('client_order_id') != key or row.get('status') not in ('unresolved', 'filled', 'no_fill')
+            if (row.get('client_order_id') != key or row.get('status') not in ('unresolved', 'filled', 'no_fill', 'not_found')
                     or row.get('side') not in ('bid', 'ask') or not row.get('match')
                     or not D(row['reserved']).is_finite() or D(row['reserved']) < 0
                     or D(row['reserved']) != reserve_cost(row['side'], row['price'], row['count'])):
@@ -76,10 +76,10 @@ class Ledger:
         # Filled allocations are not recycled during this first pilot. Thus the
         # lifetime total bounds loss even across settlement, restarts and wins.
         return sum((D(o['reserved']) for o in self.state['orders'].values()
-                    if o['status'] != 'no_fill' and (match is None or o['match'] == match)), D(0))
+                    if o['status'] not in ('no_fill', 'not_found') and (match is None or o['match'] == match)), D(0))
 
     def prepare(self, c):
-        if self.unresolved():
+        if self.unresolved() or self.state.get('halt_reason'):
             return None
         room = min(self.total-self.used(), self.per_match-self.used(c['match']))
         n = min(int(c['quantity']), 500)
@@ -120,27 +120,114 @@ class Ledger:
         self.save()
         return True
 
-    def reconcile(self, call=request):
-        if not self.unresolved():
-            return
-        orders, cursor = [], None
-        for _ in range(100):
-            from urllib.parse import urlencode
-            params = {'limit': 200}
-            if cursor:
-                params['cursor'] = cursor
-            status, data = call('GET', API+'/portfolio/orders?'+urlencode(params))
-            if status != 200 or not isinstance(data, dict) or not isinstance(data.get('orders'), list):
-                return
-            orders.extend(data['orders'])
-            cursor = data.get('cursor')
-            if not cursor:
-                break
-        else:
-            return
-        by_id = {o.get('client_order_id'): o for o in orders}
-        for row in self.unresolved():
-            o = by_id.get(row['client_order_id'])
-            if o:
-                self.accept(row, o)
-        # Absence from a read is NOT proof of rejection. Keep paused/reserved.
+    def reconcile(self, call=request, now=None):
+        now = time.time() if now is None else now
+        targets = [o for o in self.state['orders'].values()
+                   if o['status'] in ('unresolved', 'not_found')]
+        for row in targets:
+            was_released = row['status'] == 'not_found'
+            try:
+                orders = read_pages(call, '/portfolio/orders', 'orders', ticker=row['ticker'])
+                # Completed orders/fills can migrate to historical storage.
+                status, cutoff = call('GET', API+'/historical/cutoff')
+                if status != 200 or not isinstance(cutoff, dict):
+                    raise ValueError('historical cutoff unavailable')
+                start = row['created_at']-60
+                order_cutoff = timestamp(cutoff['orders_updated_ts'])
+                fill_cutoff = timestamp(cutoff['trades_created_ts'])
+                if start <= order_cutoff:
+                    orders += read_pages(call, '/historical/orders', 'orders',
+                                         ticker=row['ticker'], min_ts=int(start))
+                matching = [o for o in orders if o.get('client_order_id') == row['client_order_id']]
+                if matching:
+                    if row['status'] == 'not_found':
+                        self.state['halt_reason'] = 'Late exchange order appeared after absent-order release'
+                    for order in matching:
+                        if self.accept(row, order):
+                            break
+                    row.pop('absence_checks', None)
+                    self.save()
+                    continue
+                # Keep checking released tombstones for late orders OR fills.
+                if now-row['created_at'] < 600:
+                    continue
+                status, stamp = call('GET', API+'/exchange/user_data_timestamp')
+                if status != 200 or not isinstance(stamp, dict):
+                    raise ValueError('account data watermark unavailable')
+                as_of = timestamp(stamp['as_of_time'])
+                if not now-60 <= as_of <= now+5 or as_of < row['created_at']+600:
+                    raise ValueError('account data watermark stale or before cutoff')
+                fills = read_pages(call, '/portfolio/fills', 'fills',
+                                   ticker=row['ticker'], min_ts=int(start))
+                if start <= fill_cutoff:
+                    fills += read_pages(call, '/historical/fills', 'fills',
+                                        ticker=row['ticker'], min_ts=int(start))
+                positions = read_pages(call, '/portfolio/positions', 'market_positions',
+                                       ticker=row['ticker'])
+                settlements = read_pages(call, '/portfolio/settlements', 'settlements',
+                                         ticker=row['ticker'], min_ts=int(start))
+                # Be conservative around unrelated manual activity too. Any
+                # same-market fill/settlement within this window blocks release.
+                if fills or settlements:
+                    if was_released:
+                        self.state['halt_reason'] = 'Late fill/settlement evidence after absent-order release'
+                        row['status'] = 'unresolved'
+                    raise ValueError('same-market fill or settlement exists; attribution required')
+                for pos in positions:
+                    if pos.get('ticker') != row['ticker']:
+                        raise ValueError('position filter mismatch')
+                    quantity, exposure = D(pos['position_fp']), D(pos['market_exposure_dollars'])
+                    if not quantity.is_finite() or not exposure.is_finite() or quantity != 0 or exposure != 0:
+                        if was_released:
+                            self.state['halt_reason'] = 'Position appeared after absent-order release'
+                            row['status'] = 'unresolved'
+                        raise ValueError('nonzero or invalid market position/exposure')
+                # An unmatched working order in this market also blocks release.
+                if any(o.get('status') not in ('executed', 'canceled') for o in orders):
+                    raise ValueError('same-market pending/nonterminal order exists')
+                if was_released:
+                    row['last_absence_recheck_at'] = now
+                    self.save()
+                    continue
+                checks = row.setdefault('absence_checks', [])
+                # A long gap is not consecutive evidence; refresh all three.
+                if checks and now-checks[-1]['at'] > 120:
+                    checks.clear()
+                if not checks or now-checks[-1]['at'] >= 30:
+                    checks.append({'at': now, 'as_of': as_of, 'orders': len(orders),
+                                   'fills': 0, 'positions': len(positions), 'settlements': 0})
+                if len(checks) >= 3 and checks[-1]['at']-checks[0]['at'] >= 60:
+                    row.update(status='not_found', filled='0', resolved_at=now,
+                               resolution='assumed-not-executed-after-10m-and-three-clean-checks')
+                row.pop('reconcile_error', None)
+                self.save()
+            except (ValueError, KeyError, TypeError, ArithmeticError) as exc:
+                row['reconcile_error'] = str(exc)[:200]
+                row.pop('absence_checks', None)
+                self.save()
+
+
+def timestamp(value):
+    from datetime import datetime
+    return datetime.fromisoformat(value.replace('Z', '+00:00')).timestamp()
+
+
+def read_pages(call, path, key, **params):
+    from urllib.parse import urlencode
+    rows, cursor, seen = [], None, set()
+    for _ in range(100):
+        query = dict(params, limit=200)
+        if cursor:
+            query['cursor'] = cursor
+        status, data = call('GET', API+path+'?'+urlencode(query))
+        if (status != 200 or not isinstance(data, dict) or not isinstance(data.get(key), list)
+                or 'cursor' not in data or not isinstance(data['cursor'], str)):
+            raise ValueError(path+' incomplete or failed read')
+        rows.extend(data[key])
+        cursor = data['cursor']
+        if not cursor:
+            return rows
+        if cursor in seen:
+            raise ValueError(path+' repeated cursor')
+        seen.add(cursor)
+    raise ValueError(path+' pagination limit reached')

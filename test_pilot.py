@@ -14,6 +14,38 @@ def c(side='bid', price=.99, match='match', tk='ticker'):
     return {'ticker': tk, 'match': match, 'side': side, 'price': price, 'quantity': 1000}
 
 
+class FakeExchange:
+    def __init__(self, orders=None, fills=None, positions=None, settlements=None, now=1600):
+        self.orders, self.fills = orders or [], fills or []
+        self.positions, self.settlements = positions or [], settlements or []
+        self.now = now
+        self.cutoff = 0
+        self.stale = False
+        self.fail = None
+        self.historical_orders = []
+        self.historical_fills = []
+
+    def __call__(self, method, path):
+        from datetime import datetime, timezone
+        path = path.split('?')[0]
+        if path.endswith(self.fail or 'NOFAIL'):
+            return 503, {}
+        stamp = lambda t: datetime.fromtimestamp(t,timezone.utc).isoformat()
+        if path.endswith('/historical/cutoff'):
+            return 200, {'orders_updated_ts':stamp(self.cutoff), 'trades_created_ts':stamp(self.cutoff)}
+        if path.endswith('/exchange/user_data_timestamp'):
+            return 200, {'as_of_time':stamp(self.now-300 if self.stale else self.now)}
+        for suffix,key,rows in [('/portfolio/orders','orders',self.orders),
+                                 ('/historical/orders','orders',self.historical_orders),
+                                 ('/portfolio/fills','fills',self.fills),
+                                 ('/historical/fills','fills',self.historical_fills),
+                                 ('/portfolio/positions','market_positions',self.positions),
+                                 ('/portfolio/settlements','settlements',self.settlements)]:
+            if path.endswith(suffix):
+                return 200, {key:rows,'cursor':''}
+        raise AssertionError(path)
+
+
 class ExecutionTests(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
@@ -37,7 +69,7 @@ class ExecutionTests(unittest.TestCase):
         order = {'order_id': 'exchange-id', 'client_order_id': row['client_order_id'],
                  'ticker': row['ticker'], 'fill_count_fp': '2.00', 'status': 'canceled'}
         for _ in range(2):
-            self.ledger.reconcile(lambda *a: (200, {'orders': [order]}))
+            self.ledger.reconcile(FakeExchange(orders=[order]))
         self.assertFalse(self.ledger.unresolved())
         self.assertEqual(self.ledger.used(), reserve_cost('bid', .99, 5))
         self.assertIsNone(self.ledger.prepare(c(side='ask', price=.01)))
@@ -70,6 +102,89 @@ class ExecutionTests(unittest.TestCase):
         with patch.object(self.ledger, 'save', side_effect=OSError('disk full')):
             with self.assertRaises(OSError):
                 self.ledger.prepare(c())
+
+    def old_order(self):
+        with patch('pilot_execution.time.time', return_value=1000):
+            return self.ledger.prepare(c())
+
+    def test_ten_minute_cutoff_requires_three_spaced_clean_scans(self):
+        row=self.old_order(); exchange=FakeExchange()
+        for now in [1599,1600,1610,1629,1630]:
+            exchange.now=now; self.ledger.reconcile(exchange,now=now)
+            self.assertEqual(row['status'],'unresolved')
+        exchange.now=1660; self.ledger.reconcile(exchange,now=1660)
+        self.assertEqual(row['status'],'not_found')
+        self.assertEqual(self.ledger.used(),0)
+        restored=Ledger(self.path)
+        self.assertEqual(restored.state['orders'][row['client_order_id']]['status'],'not_found')
+
+    def test_positions_fills_settlements_stale_or_failed_reads_block_release(self):
+        for kwargs in [dict(fills=[{'order_id':'unknown'}]),
+                       dict(positions=[{'ticker':'ticker','position_fp':'0.50','market_exposure_dollars':'.5'}]),
+                       dict(settlements=[{'ticker':'ticker'}])]:
+            with self.subTest(kwargs=kwargs):
+                row=self.old_order(); exchange=FakeExchange(**kwargs)
+                for now in [1600,1630,1660]:
+                    exchange.now=now; self.ledger.reconcile(exchange,now=now)
+                self.assertEqual(row['status'],'unresolved')
+                self.ledger.state['orders'].clear(); self.ledger.save()
+        for setting in ['stale','fail']:
+            row=self.old_order(); exchange=FakeExchange()
+            setattr(exchange,setting,True if setting=='stale' else '/portfolio/fills')
+            for now in [1600,1630,1660]:
+                exchange.now=now; self.ledger.reconcile(exchange,now=now)
+            self.assertEqual(row['status'],'unresolved')
+            self.ledger.state['orders'].clear(); self.ledger.save()
+
+    def test_failed_scan_resets_consecutive_evidence(self):
+        row=self.old_order(); exchange=FakeExchange()
+        self.ledger.reconcile(exchange,now=1600)
+        exchange.fail='/portfolio/fills';exchange.now=1630
+        self.ledger.reconcile(exchange,now=1630)
+        self.assertNotIn('absence_checks',row)
+        exchange.fail=None;exchange.now=1660
+        self.ledger.reconcile(exchange,now=1660)
+        self.assertEqual(len(row['absence_checks']),1)
+
+    def test_historical_order_and_late_fill_keep_risk(self):
+        row=self.old_order(); exchange=FakeExchange();exchange.cutoff=1700
+        order={'order_id':'late','client_order_id':row['client_order_id'],
+               'ticker':'ticker','status':'executed','fill_count_fp':'1.00'}
+        exchange.historical_orders=[order]
+        self.ledger.reconcile(exchange,now=1600)
+        self.assertEqual(row['status'],'filled')
+        self.assertGreater(self.ledger.used(),0)
+        # Simulate a persisted prior inference, then subsequent exchange discovery.
+        row['status']='not_found';self.ledger.save()
+        self.ledger.reconcile(exchange,now=1700)
+        self.assertEqual(row['status'],'filled')
+        self.assertTrue(self.ledger.state['halt_reason'])
+        self.assertIsNone(self.ledger.prepare(c(match='other')))
+
+    def test_historical_fill_with_zero_position_blocks_release(self):
+        row=self.old_order();exchange=FakeExchange();exchange.cutoff=1700
+        exchange.historical_fills=[{'order_id':'unattributed'}]
+        for now in [1600,1630,1660]:
+            exchange.now=now;self.ledger.reconcile(exchange,now=now)
+        self.assertEqual(row['status'],'unresolved')
+
+    def test_late_unattributed_fill_restores_reservation_and_halts(self):
+        row=self.old_order();exchange=FakeExchange()
+        for now in [1600,1630,1660]:
+            exchange.now=now;self.ledger.reconcile(exchange,now=now)
+        self.assertEqual(row['status'],'not_found')
+        exchange.fills=[{'order_id':'late-with-missing-order'}];exchange.now=1700
+        self.ledger.reconcile(exchange,now=1700)
+        self.assertEqual(row['status'],'unresolved')
+        self.assertTrue(self.ledger.state['halt_reason'])
+        self.assertGreater(self.ledger.used(),0)
+
+    def test_incomplete_pagination_cannot_prove_absence(self):
+        row=self.old_order()
+        def loop(*a):return 200, {'orders':[],'cursor':'repeat'}
+        self.ledger.reconcile(loop,now=1700)
+        self.assertEqual(row['status'],'unresolved')
+        self.assertIn('repeated cursor',row['reconcile_error'])
 
     def test_idle_connection_discarded_before_post_not_retried(self):
         from pilot_execution import request
