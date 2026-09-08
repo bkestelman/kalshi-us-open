@@ -1310,3 +1310,76 @@ Settlement evidence for live summary saved in
  data/reviews/20260908T010800Z-live-settlement.json.
 Existing paper and shadow processes kept running. First live process restart
 loads the same durable ledger; changes do not erase losses or refill used budget.
+
+## 2026-09-08 02:03 UTC — bounded scheduled review
+
+Reviewed interval 01:08 (last completed recovery/deployment audit)–02:03 UTC.
+Initial git status clean. Read PILOT.md and last100 notes first; only older
+annual-specific paragraph revisited to compare cached Alcaraz terms. No restart,
+strategy/cap change, manual order, test-suite replay, or scheduler change.
+
+paper_report.py via python3 returned no warnings. Initial `python` command
+failed (not installed); python3 succeeded. Broad/confirmed, score, related,
+live/shadow pilot and standalone REST/WS captures active. Broad/confirmed
+service starts Sep7 02:22/02:23 with zero restarts: nearly24h continuous at this
+review, maintain through next review. Related start Sep7 02:58, zero restarts.
+Disk33G free (32% used). Score age1.3s, discovery47.6s at initial report.
+Broad WS grew33767878->33866325 bytes during review; related130929->130994,
+latest age25.7s. Standalone WS82.76MB, trades1.95MB, books1.20MB freshly
+written; WS count39,673,091 at01:30 ->40,520,636 at02:00. No interval errors,
+sequence gaps or failed reconnects in inspected app logs; standalone REST14
+and WS17 interval log rows, zero error matches. Journals for capture services
+had no entries (most output goes to files); file logs checked separately.
+Quiet related market intervals are consistent with healthy heartbeat/capture.
+No whole-day raw replay; continuity evidence is file growth plus interval
+message counts/status, not an exhaustive per-message sequence audit.
+
+Live new Tien tournament NO5 at01:37:09: match bid absent/ask1c, cached valid
+identity/round and started fifth set. Target sell-YES price2c is distinct from
+strict MATCH1c trigger; no live model-edge entry. Signed fully paginated GETs
+at02:01:25: executed order5, matching fill5, position-5, cost4.900000 and
+fee0.006900, no settlement. IOC response average fee0.0013 is rounded: use
+reconciled0.006900 total, not inferred0.0065. Reservation4.91 covers actual;
+Rybakina retained4.96, total9.87/25, each match<=5. Recomputed every live and
+shadow reservation with rounded fee formula successfully. Shadow308.91/500,
+max match124.83/125; new Tien127 fill. No unresolved/error/halt; STOP absent.
+Cerundolo tombstone retained; direct orders/fills/positions/settlements empty,
+fresh exchange watermark200. No late evidence, no retry. Live remains enabled.
+Signed read evidence saved20260908T020000Z-exchange.json; no POST performed.
+
+Broad interval7 fills/545 contracts: Tien NO518 across tournament/SEMI/QUAR,
+Khachanov QUAR YES27. First127 Tien were broad-only model-edge; subsequent
+book inference preceded score lost confirmation01:37:24.529 by8–15s.
+Confirmed3 fills/532 contracts: Tien QUAR5/tournament500 and Khachanov YES27,
+after score confirmation. All10 interval paper fills REST verified with
+count<=verified depth; three broad absent-price attempts correctly no_fill.
+Independent accounts/counterfactual shadow are not additive liquidity.
+Gauff YES20 settled +0.18; Jovic NO1 settled displayed+0.03 (exact short net
+change0.027963). Broad realized16.647995+6.78=23.427995; confirmed0.55,
+no new confirmed settlements. Durable account/health counts agree: broad18
+short/9 YES, confirmed2 short/3 YES. Open Tien/Khachanov fills remain unsettled,
+not counted as realized. Excluded synthetic run IDs honored. Observed score
+outcomes support Tien loss/Khachanov win; Gea loss/Van win observed01:59:50,
+no new fill for that pair. Discovery has that pair and Zverev/Darderi; no new
+demonstrated missed-market/false-positive discrepancy. Full draw census and
+raw consumed-depth replay not repeated on unchanged code.
+
+Annual27 contracts remain capture-only. Cached Alcaraz KXGRANDSLAM-CALC26-2
+active, unchanged updated_time July13, UUID527915ea-e368-4c7f-a203-c83ebb6f6572,
+calendar2026 at least2; expectedSep15/closeSep29 14:00Z, timer300s. Prior
+verified notes record AO Alcaraz/Rybakina, RG Zverev/Andreeva, Wimbledon
+Sinner/Noskova (Sinner previous re-fetch failed); USO remaining. Alcaraz already
+has AO, so USO can be second; active does not imply zero prior titles. Retain
+prior15 UUID joins/12 unverified, generic after-issuance distinction and
+potential year-end/Jan7 cash lock. No unchanged external rules/history
+re-fetched, no new identity validation or promotion claimed.
+
+Material unrelated operational issue: kalshi-control.service crash loops in
+/home/ubuntu/kalshi/control_server.py:332, RuntimeError tennis-tournwinner:
+--obs-every has no kind in FLAGS. Journal evidence02:01:41. External control
+repo left untouched; capture services continue independently. Handoff: fix
+control-panel flag schema in its own working context; monitor Tien/Khachanov
+settlements and confirm24h duration next review. No concrete live execution/cap
+fault found, so no safety stop. No production code changes/tests necessary;
+read-only assertions verified reservation math and fresh interval fill depth.
+Detailed current health/positions saved20260908T020000Z-summary.json.
