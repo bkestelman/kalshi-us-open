@@ -27,8 +27,13 @@ def summarize(directory, since, score_directory=None):
     for row in rows(os.path.join(score_directory, 'tennis_scores_*.jsonl')):
         if confirmed_winner(row.get('score', {}), row.get('best_of')):
             ended.setdefault(row['event'], row['received_at'])
+    exclusion_path = os.path.join(directory, 'paper_action_exclusions.json')
+    excluded = set()
+    if os.path.exists(exclusion_path):
+        with open(exclusion_path) as f:
+            excluded = set(json.load(f).get('run_ids', []))
     actions = [r for r in rows(os.path.join(directory, 'winner_taker_actions_paper_*.jsonl'))
-               if r['t'] >= since]
+               if r['t'] >= since and r.get('run_id') not in excluded]
     fills = []
     for row in actions:
         if row['a'] not in ('take', 'qualifier_take'):

@@ -36,6 +36,7 @@ def report():
     discovery = read('winner_taker_discovery.json')
     day = datetime.now(timezone.utc).strftime('%Y%m%d')
     for directory, counter in ((OUT, counts), (confirmed_dir, confirmed_counts)):
+        excluded = set(read('paper_action_exclusions.json', directory).get('run_ids', []))
         for path in glob.glob(os.path.join(directory, f'winner_taker_actions_paper_{day}.jsonl')):
             with open(path) as f:
                 for line in f:
@@ -43,8 +44,13 @@ def report():
                         row = json.loads(line)
                     except ValueError:
                         continue
-                    counter[row.get('a', 'unknown')] += 1
+                    if row.get('run_id') not in excluded:
+                        counter[row.get('a', 'unknown')] += 1
     warnings = []
+    if (short and health.get('updated_at', 0) >= short.get('updated_at', 0)
+            and (health.get('takes', 0) != short.get('takes', 0)
+                 or abs(health.get('realized', 0)-short.get('realized', 0)) > 1e-6)):
+        warnings.append('paper account checkpoint disagrees with running process')
     pilots = {}
     for name in ('pilot_live', 'pilot_paper'):
         directory = os.path.join(os.path.dirname(OUT), name)

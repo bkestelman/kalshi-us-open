@@ -6,7 +6,7 @@ import tempfile
 import unittest
 import time
 
-os.environ['KALSHI_DATA'] = tempfile.mkdtemp(prefix='paper-support-test-')
+import _test_environment
 import winner_taker as W
 from kalshi import Book
 from paper_support import PaperLiquidity, rest_quantity

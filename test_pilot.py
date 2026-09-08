@@ -1,3 +1,4 @@
+import _test_environment
 import tempfile
 from pathlib import Path
 from types import SimpleNamespace

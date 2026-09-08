@@ -1210,3 +1210,50 @@ Regression test verifies discard precedes exactly one send. All12 pilot tests
 pass. This fixes an avoidable transport failure mode but cannot retroactively
 establish the uncertain order outcome. Reconciliation and conservative pause
 remain in force, pending terminal exchange evidence. No cap/strategy change.
+
+## 2026-09-08 00:35 UTC — failed review recovery and test isolation repair
+
+Automatically handled queued22:00/00:00 review failures and repeated alerts.
+Both failed with Codex usage exhaustion, reset text00:07 UTC. 22:00 consumed
+84,086 reported tokens and stopped mid-repair after /tmp/repair2200.py failed
+ModuleNotFoundError paper_support; 00:00 failed before producing a report.
+Do not describe those reviews as successful. Their logs remain intact.
+
+22:00 reviewer left STOP on live pilot and uncommitted test_pilot.py isolation
+change. More serious: combined test import order cached iolib.LIVE pointing to
+production before test_winner_taker selected temporary storage. Five synthetic
+rows from PID93034 were appended and the broad short account checkpoint was
+overwritten with fake tickerT/count100. Running PID23503 retained correct state
+(takes11, realized16.620032, locked0), and live ledger was separate/unaffected.
+The earlier repair script never ran past its import; no assumed repair success.
+
+Rebuilt durable broad short account from genuine REST-verified actions since
+Sep6 21:28:44, checked all11 takes have settled tickers, recomputed exact
+realized16.620032 and by-day exposure, matched running health. No restart.
+Preserved contaminated checkpoint and five excluded rows under
+ data/reviews/20260908T003400Z-*.
+Raw action journal unchanged. Explicit data/live/paper_action_exclusions.json
+lists the synthetic run IDs; paper_report and analyze_paper_run honor it.
+Unknown saved liquidity conservatively zeroed across known ticker cent levels
+in recovered checkpoint; running process has original in-memory depth and its
+next account save will supersede this conservative fallback.
+
+Added shared _test_environment loaded BEFORE production imports in all four
+test modules, rejecting a process which already cached iolib paths. Replaced
+conflicting per-file env setups. Combined unittest discovery (30 tests plus
+winner script's import-time checks) passes in one process; hashes of production
+paper account/config and live ledger unchanged across that reproduction.
+Paper report now flags checkpoint-versus-newer-heartbeat count/P&L divergence.
+
+Reduced routine review work to new interval/errors, last100 note lines plus
+PILOT.md. No repeat whole-day raw replays/rules fetches or unchanged-code test
+runs without a new reason. Model/caps unchanged. Changed identical-warning
+reminders30min->2h; new/changed failures still notify immediately, and each
+review result/failure still delivered separately. This reduces repeated alerts
+without pretending an old unresolved order has been resolved.
+
+Live remains STOP and unresolved Cerundolo full4.96 reservation, total9.92
+allocation including verified Rybakina fill. Direct signed orders read200,
+empty records/cursor still; no safe evidence to classify as rejected, no POST
+retry or ledger clearance. Feed healthy. Scheduled service retains failure
+status until a later successful review; no reset to conceal failures.

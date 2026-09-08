@@ -12,7 +12,7 @@ import os
 import sys
 import tempfile
 
-os.environ.setdefault("KALSHI_DATA", tempfile.mkdtemp(prefix="wt-test-"))
+import _test_environment
 
 import winner_taker as W
 from kalshi import Book, fee
