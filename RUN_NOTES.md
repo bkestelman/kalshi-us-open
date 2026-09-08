@@ -1383,3 +1383,17 @@ settlements and confirm24h duration next review. No concrete live execution/cap
 fault found, so no safety stop. No production code changes/tests necessary;
 read-only assertions verified reservation math and fresh interval fill depth.
 Detailed current health/positions saved20260908T020000Z-summary.json.
+
+### 02:04 UTC review delivery follow-up: control panel repaired
+
+02:00 review completed successfully and confirmed5-contract Tien tournament NO
+live fill; allocated9.87/25, no unresolved orders, no cap change. Investigated
+independent kalshi-control.service crash loop in /home/ubuntu/kalshi repo.
+JOBS tennis-tournwinner already declared obs-every/no-obs/default mode all,
+while FLAGS omitted both flags and allowed only both/final/dead. Verified
+actual tourn_taker argparse supports numeric obs-every, boolean no-obs and
+both/final/dead/dom/all. Aligned FLAGS only. Import-time registry validation
+and defaults assertions passed, no trading job launched. Committed/pushed
+49a2249 to bkestelman/kalshi; unrelated untracked paper_holds file untouched.
+Restarted only kalshi-control: active/running, NRestarts0, HTTP200 localhost8080.
+Pilot/paper services unchanged. No exposure increase or broader live activation.
