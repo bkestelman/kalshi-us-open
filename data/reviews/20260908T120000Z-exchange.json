@@ -1,0 +1,158 @@
+{
+  "at": 1788868881.8353274,
+  "markets": {
+    "KXWTAADVANCE-26USOQUAR-RYB": {
+      "orders": [
+        {
+          "action": "buy",
+          "book_side": "bid",
+          "client_order_id": "tennis-pilot-99f11c10-8c44-469d-930b-43c1a5965807",
+          "created_time": "2026-09-07T21:14:00.329844Z",
+          "exchange_index": 3,
+          "fill_count_fp": "5.00",
+          "initial_count_fp": "5.00",
+          "last_update_time": "2026-09-07T21:14:00.329844Z",
+          "maker_fees_dollars": "0.000000",
+          "maker_fill_cost_dollars": "0.000000",
+          "no_price_dollars": "0.0100",
+          "order_id": "01a07db8-85c0-7e24-9519-c2abbe2bf4b7",
+          "outcome_side": "yes",
+          "remaining_count_fp": "0.00",
+          "self_trade_prevention_type": "taker_at_cross",
+          "side": "yes",
+          "status": "executed",
+          "subaccount_number": 0,
+          "taker_fees_dollars": "0.003500",
+          "taker_fill_cost_dollars": "4.950000",
+          "ticker": "KXWTAADVANCE-26USOQUAR-RYB",
+          "type": "limit",
+          "user_id": "1e801a5e-b59f-4e11-a2c4-801e78d34bed",
+          "yes_price_dollars": "0.9900"
+        }
+      ],
+      "fills": [
+        {
+          "action": "buy",
+          "book_side": "bid",
+          "count_fp": "5.00",
+          "created_time": "2026-09-07T21:14:00.329844Z",
+          "exchange_index": 3,
+          "fee_cost": "0.003500",
+          "fill_id": "0721c08d-a941-8270-de3a-488b9da0e9fd",
+          "is_taker": true,
+          "market_ticker": "KXWTAADVANCE-26USOQUAR-RYB",
+          "no_price_dollars": "0.0100",
+          "order_id": "01a07db8-85c0-7e24-9519-c2abbe2bf4b7",
+          "outcome_side": "yes",
+          "side": "yes",
+          "subaccount_number": 0,
+          "ticker": "KXWTAADVANCE-26USOQUAR-RYB",
+          "trade_id": "0721c08d-a941-8270-de3a-488b9da0e9fd",
+          "ts": 1788815640,
+          "yes_price_dollars": "0.9900"
+        }
+      ],
+      "positions": [],
+      "settlements": [
+        {
+          "event_ticker": "KXWTAADVANCE-26USOQUAR",
+          "exchange_index": 3,
+          "fee_cost": "0.003500",
+          "market_result": "yes",
+          "no_count_fp": "0.00",
+          "no_total_cost_dollars": "0.000000",
+          "revenue": 500,
+          "settled_time": "2026-09-07T21:45:45.494635Z",
+          "ticker": "KXWTAADVANCE-26USOQUAR-RYB",
+          "value": 100,
+          "yes_count_fp": "5.00",
+          "yes_total_cost_dollars": "4.950000"
+        }
+      ]
+    },
+    "KXATPADVANCE-26USOFIN-CER": {
+      "orders": [],
+      "fills": [],
+      "positions": [],
+      "settlements": []
+    },
+    "KXATP-26USO-TIE": {
+      "orders": [
+        {
+          "action": "sell",
+          "book_side": "ask",
+          "client_order_id": "tennis-pilot-e8936504-5f9b-4fdd-afa0-63f62f2d5516",
+          "created_time": "2026-09-08T01:37:09.333049Z",
+          "exchange_index": 0,
+          "fill_count_fp": "5.00",
+          "initial_count_fp": "5.00",
+          "last_update_time": "2026-09-08T01:37:09.333049Z",
+          "maker_fees_dollars": "0.000000",
+          "maker_fill_cost_dollars": "0.000000",
+          "no_price_dollars": "0.9800",
+          "order_id": "01a07ea9-7188-73c0-ae68-3785e60c446b",
+          "outcome_side": "no",
+          "remaining_count_fp": "0.00",
+          "self_trade_prevention_type": "taker_at_cross",
+          "side": "yes",
+          "status": "executed",
+          "subaccount_number": 0,
+          "taker_fees_dollars": "0.006900",
+          "taker_fill_cost_dollars": "4.900000",
+          "ticker": "KXATP-26USO-TIE",
+          "type": "limit",
+          "user_id": "1e801a5e-b59f-4e11-a2c4-801e78d34bed",
+          "yes_price_dollars": "0.0200"
+        }
+      ],
+      "fills": [
+        {
+          "action": "sell",
+          "book_side": "ask",
+          "count_fp": "5.00",
+          "created_time": "2026-09-08T01:37:09.333049Z",
+          "exchange_index": 0,
+          "fee_cost": "0.006900",
+          "fill_id": "0721840c-8489-bcd1-0835-fa5e836b1b6e",
+          "is_taker": true,
+          "market_ticker": "KXATP-26USO-TIE",
+          "no_price_dollars": "0.9800",
+          "order_id": "01a07ea9-7188-73c0-ae68-3785e60c446b",
+          "outcome_side": "no",
+          "side": "no",
+          "subaccount_number": 0,
+          "ticker": "KXATP-26USO-TIE",
+          "trade_id": "0721840c-8489-bcd1-0835-fa5e836b1b6e",
+          "ts": 1788831429,
+          "yes_price_dollars": "0.0200"
+        }
+      ],
+      "positions": [],
+      "settlements": [
+        {
+          "event_ticker": "KXATP-26USO",
+          "exchange_index": 0,
+          "fee_cost": "0.006900",
+          "market_result": "no",
+          "no_count_fp": "5.00",
+          "no_total_cost_dollars": "4.900000",
+          "revenue": 500,
+          "settled_time": "2026-09-08T02:45:45.489855Z",
+          "ticker": "KXATP-26USO-TIE",
+          "value": 0,
+          "yes_count_fp": "0.00",
+          "yes_total_cost_dollars": "0.000000"
+        }
+      ]
+    }
+  },
+  "cutoff": {
+    "market_positions_last_updated_ts": "2026-07-10T00:00:00Z",
+    "market_settled_ts": "2026-07-10T00:00:00Z",
+    "orders_updated_ts": "2026-07-10T00:00:00Z",
+    "trades_created_ts": "2026-07-10T00:00:00Z"
+  },
+  "watermark": {
+    "as_of_time": "2026-09-08T12:01:22.235693Z"
+  }
+}

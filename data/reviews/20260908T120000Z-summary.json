@@ -1,0 +1,406 @@
+{
+  "at": "2026-09-08T12:01:21.832695+00:00",
+  "t": 1788868881.817039,
+  "warnings": [],
+  "pilots": {
+    "pilot_live": {
+      "updated_at": 1788868881.6993678,
+      "mode": "live",
+      "pid": 120901,
+      "started_at": 1788868660.4523625,
+      "feed_ready": false,
+      "messages": 0,
+      "last_message_at": 0.0,
+      "legs": 0,
+      "allocated": "9.87",
+      "total_cap": "250",
+      "per_match_cap": "50",
+      "unresolved": 0,
+      "error": null,
+      "disabled": false,
+      "account_ready": true,
+      "orders": 3
+    },
+    "pilot_paper": {
+      "updated_at": 1788868880.8419147,
+      "mode": "paper",
+      "pid": 85822,
+      "started_at": 1788811895.6943815,
+      "feed_ready": true,
+      "messages": 3164798,
+      "last_message_at": 1788839558.866139,
+      "legs": 0,
+      "allocated": "308.91",
+      "total_cap": "500",
+      "per_match_cap": "125",
+      "unresolved": 0,
+      "error": null,
+      "disabled": false,
+      "account_ready": true,
+      "orders": 5
+    }
+  },
+  "related_health": {
+    "feed_ready": true,
+    "last_message_at": 1788868705.3870645,
+    "market_count": 27,
+    "connection": 197,
+    "snapshots": 27,
+    "updated_at": 1788868875.4740324,
+    "messages": 17438,
+    "pid": 25696
+  },
+  "captures": {
+    "winner_taker_ws": {
+      "path": "/home/ubuntu/kalshi-us-open/data/live/winner_taker_ws_20260908.jsonl.gz",
+      "age_s": 29328.3,
+      "bytes": 36008697
+    },
+    "related_ws": {
+      "path": "/home/ubuntu/kalshi-us-open/data/live/related_ws_20260908.jsonl.gz",
+      "age_s": 176.4,
+      "bytes": 842474
+    }
+  },
+  "review_result": "success",
+  "heartbeat_age_s": 44.6,
+  "score_cache_age_s": 1.1,
+  "health": {
+    "updated_at": 1788868837.1851032,
+    "pid": 23503,
+    "mode": "paper",
+    "feed_ready": true,
+    "last_message_at": 1788839553.4883728,
+    "messages": 5083878,
+    "matches": 0,
+    "legs": 0,
+    "takes": 18,
+    "locked": 0,
+    "realized": 33.619006,
+    "require_score_confirmation": false,
+    "qualifier_takes": 9,
+    "qualifier_locked": 0,
+    "qualifier_realized": 7.030000000000026
+  },
+  "today_action_counts": {
+    "signal": 17,
+    "take": 7,
+    "qualifier_take": 2,
+    "score_state": 8,
+    "mark": 4,
+    "qualifier_settle": 2,
+    "settle": 4,
+    "no_fill": 3
+  },
+  "confirmed_today_action_counts": {
+    "signal": 17,
+    "score_state": 8,
+    "take": 2,
+    "qualifier_take": 1,
+    "mark": 2,
+    "qualifier_settle": 1,
+    "settle": 2
+  },
+  "discovery_age_s": 16.0,
+  "confirmed_health": {
+    "updated_at": 1788868877.5326676,
+    "pid": 23560,
+    "mode": "paper",
+    "feed_ready": true,
+    "last_message_at": 1788839598.3761737,
+    "messages": 5086351,
+    "matches": 0,
+    "legs": 0,
+    "takes": 2,
+    "locked": 0,
+    "realized": 4.746639999999999,
+    "require_score_confirmation": true,
+    "qualifier_takes": 3,
+    "qualifier_locked": 0,
+    "qualifier_realized": 0.8000000000000007
+  },
+  "confirmed_account": {
+    "short_takes": 2,
+    "short_realized": 4.746639999999999,
+    "short_positions": 0,
+    "qualifier_takes": 3,
+    "qualifier_realized": 0.8000000000000007,
+    "qualifier_positions": 0
+  },
+  "short_account": {
+    "takes": 18,
+    "realized": 33.619006,
+    "positions": 0
+  },
+  "qualifier_account": {
+    "takes": 9,
+    "realized": 7.030000000000026,
+    "positions": 0
+  },
+  "interval_start": 1788861720.0,
+  "interval_actions": {
+    "live": {
+      "count": 0,
+      "actions": {},
+      "excluded": 0
+    },
+    "confirmed": {
+      "count": 0,
+      "actions": {},
+      "excluded": 0
+    },
+    "pilot_live": {
+      "count": 1,
+      "actions": {
+        "pilot_start": 1
+      },
+      "excluded": 0
+    },
+    "pilot_paper": {
+      "count": 0,
+      "actions": {},
+      "excluded": 0
+    }
+  },
+  "ledger_checks": {
+    "pilot_live": {
+      "used": "9.87",
+      "max_match": "4.96",
+      "statuses": {
+        "filled": 2,
+        "not_found": 1
+      },
+      "tombstones": [
+        {
+          "ticker": "KXATPADVANCE-26USOFIN-CER",
+          "match": "KXATPMATCH-26SEP06CERBLO",
+          "match_ticker": "KXATPMATCH-26SEP06CERBLO-CER",
+          "side": "ask",
+          "price": 0.01,
+          "quantity": 300.0,
+          "score": {
+            "state": "unconfirmed",
+            "received_age_s": 0.492,
+            "milestone_id": "ccf0ac5b-92a8-47b6-9c2d-36af74664963",
+            "player_id": "c04d61a6-51e7-459c-a881-0734a044c460",
+            "status": "live",
+            "match_status": "4th_set",
+            "best_of": "5",
+            "round": "Round Of 16",
+            "sets": 1,
+            "opponent_sets": 2,
+            "games": [
+              {
+                "outcome": "loser",
+                "score": 3
+              },
+              {
+                "outcome": "winner",
+                "score": 6
+              },
+              {
+                "outcome": "loser",
+                "score": 5
+              },
+              {
+                "outcome": "ongoing",
+                "score": 5
+              }
+            ],
+            "opponent_games": [
+              {
+                "outcome": "winner",
+                "score": 6
+              },
+              {
+                "outcome": "loser",
+                "score": 4
+              },
+              {
+                "outcome": "winner",
+                "score": 7
+              },
+              {
+                "outcome": "ongoing",
+                "score": 6
+              }
+            ],
+            "points": 15,
+            "opponent_points": 40
+          },
+          "match_bid": null,
+          "match_ask": 0.01,
+          "client_order_id": "tennis-pilot-00356a62-278e-4269-abd6-630424c09599",
+          "count": 5,
+          "status": "not_found",
+          "created_at": 1788816343.6168673,
+          "reserved": "4.96",
+          "http_status": -1,
+          "raw_response": {
+            "error": "RemoteDisconnected"
+          },
+          "absence_checks": [
+            {
+              "at": 1788829626.0337265,
+              "as_of": 1788829626.072538,
+              "orders": 0,
+              "fills": 0,
+              "positions": 0,
+              "settlements": 0
+            },
+            {
+              "at": 1788829657.035633,
+              "as_of": 1788829657.070471,
+              "orders": 0,
+              "fills": 0,
+              "positions": 0,
+              "settlements": 0
+            },
+            {
+              "at": 1788829687.84578,
+              "as_of": 1788829687.82203,
+              "orders": 0,
+              "fills": 0,
+              "positions": 0,
+              "settlements": 0
+            }
+          ],
+          "filled": "0",
+          "resolved_at": 1788829687.84578,
+          "resolution": "assumed-not-executed-after-10m-and-three-clean-checks",
+          "last_absence_recheck_at": 1788868876.4945734
+        }
+      ]
+    },
+    "pilot_paper": {
+      "used": "308.91",
+      "max_match": "124.83",
+      "statuses": {
+        "filled": 5
+      },
+      "tombstones": []
+    }
+  },
+  "exchange_unchanged": true,
+  "interval_logs": {
+    "data/live/stdout_paper.log": {
+      "interval_rows": 60,
+      "errors_reconnects": [],
+      "last": [
+        "2026-09-08T12:00:37.188754+00:00 status: [8 open, 0 started, 0 newly watched] 0 matches, 0 legs (0 with R), 5,083,878 msgs, 18 takes, $0.00/500 locked, realized $+33.62, feed_ready=True, qualifier takes=9 realized=$+7.03"
+      ]
+    },
+    "data/confirmed/stdout_paper.log": {
+      "interval_rows": 60,
+      "errors_reconnects": [],
+      "last": [
+        "2026-09-08T12:01:17.535914+00:00 status: [primary discovery, 0 matches, snapshot age 11.9s] 0 matches, 0 legs (0 with R), 5,086,351 msgs, 2 takes, $0.00/500 locked, realized $+4.75, feed_ready=True, qualifier takes=3 realized=$+0.80"
+      ]
+    },
+    "data/live/tennis_scores.log": {
+      "interval_rows": 3581,
+      "errors_reconnects": [],
+      "last": [
+        "2026-09-08T12:01:20.772158+00:00 scores: 32 matches, 0 polled"
+      ]
+    },
+    "data/pilot_live/stdout.log": {
+      "interval_rows": 0,
+      "errors_reconnects": [],
+      "last": []
+    },
+    "data/pilot_paper/stdout.log": {
+      "interval_rows": 0,
+      "errors_reconnects": [],
+      "last": []
+    },
+    "/home/ubuntu/kalshi-tennis/data/live/stdout.log": {
+      "interval_rows": 24,
+      "errors_reconnects": [],
+      "last": [
+        "2026-09-08T11:59:31.064944+00:00 status: 5 live matches: ATP:26SEP08TIAMIC, ATP:26SEP08SHEALC, WTA:26SEP09ANDGAU, ATP:26SEP09KHABLO, ATP:26SEP09ZVEVAN"
+      ]
+    },
+    "/home/ubuntu/kalshi-tennis/data/live/stdout_ws.log": {
+      "interval_rows": 24,
+      "errors_reconnects": [],
+      "last": [
+        "2026-09-08T12:00:34.876104+00:00 status: 0 matches in play (), 43742023 msgs recorded; last scan: 5 candidates scored, 0 newly in play"
+      ]
+    }
+  },
+  "standalone_captures": {
+    "ws_20260908.jsonl.gz": {
+      "bytes": 133967121,
+      "age_s": 27614.4
+    },
+    "orderbook_20260908.jsonl.gz": {
+      "bytes": 4947981,
+      "age_s": 2.2
+    },
+    "trades_20260908.jsonl.gz": {
+      "bytes": 2780300,
+      "age_s": 15.7
+    }
+  },
+  "annual_count": 27,
+  "alcaraz_contract": [
+    {
+      "can_close_early": true,
+      "close_time": "2026-09-29T14:00:00Z",
+      "created_time": "2026-02-10T00:26:14.961302Z",
+      "custom_strike": {
+        "tennis_competitor": "527915ea-e368-4c7f-a203-c83ebb6f6572"
+      },
+      "early_close_condition": "This market will close and expire after the event occurs.",
+      "event_ticker": "KXGRANDSLAM-CALC26",
+      "exchange_index": 0,
+      "expected_expiration_time": "2026-09-15T14:00:00Z",
+      "expiration_time": "2026-09-29T14:00:00Z",
+      "expiration_value": "",
+      "floor_strike": 1.5,
+      "last_price_dollars": "0.5900",
+      "latest_expiration_time": "2026-09-29T14:00:00Z",
+      "liquidity_dollars": "0.0000",
+      "market_type": "binary",
+      "no_ask_dollars": "0.4200",
+      "no_bid_dollars": "0.4100",
+      "no_sub_title": "2+ Grand Slam wins",
+      "notional_value_dollars": "1.0000",
+      "open_interest_fp": "46614.16",
+      "open_time": "2026-02-10T15:00:00Z",
+      "previous_price_dollars": "0.5900",
+      "previous_yes_ask_dollars": "0.5900",
+      "previous_yes_bid_dollars": "0.5700",
+      "price_level_structure": "linear_cent",
+      "price_ranges": [
+        {
+          "end": "1.0000",
+          "start": "0.0000",
+          "step": "0.0100"
+        }
+      ],
+      "result": "",
+      "rules_primary": "If Carlos Alcaraz wins at least 2 tennis Grand Slams in 2026, then the market resolves to Yes.",
+      "rules_secondary": "A tennis Grand Slam refers to one of the four major annual tournaments officially designated by the sport\u2019s governing bodies: the Australian Open, French Open, Wimbledon, and the US Open.\n\nKalshi is not affiliated, associated, authorized, endorsed by, or in any way officially connected with the Governing League. All trademarks, logos, and brand names are the property of their respective owners.",
+      "settlement_timer_seconds": 300,
+      "status": "active",
+      "strike_type": "structured",
+      "subtitle": "::",
+      "ticker": "KXGRANDSLAM-CALC26-2",
+      "title": "How many Grand Slams will Carlos Alcaraz win in 2026?",
+      "updated_time": "2026-07-13T21:31:32.511076Z",
+      "volume_24h_fp": "597.11",
+      "volume_fp": "84050.21",
+      "yes_ask_dollars": "0.5900",
+      "yes_ask_size_fp": "1550.00",
+      "yes_bid_dollars": "0.5800",
+      "yes_bid_size_fp": "100.00",
+      "yes_sub_title": "2+ Grand Slam wins"
+    }
+  ],
+  "interval_scores": {
+    "rows": 0,
+    "confirmed_events": []
+  }
+}
