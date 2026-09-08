@@ -1397,3 +1397,75 @@ and defaults assertions passed, no trading job launched. Committed/pushed
 49a2249 to bkestelman/kalshi; unrelated untracked paper_holds file untouched.
 Restarted only kalshi-control: active/running, NRestarts0, HTTP200 localhost8080.
 Pilot/paper services unchanged. No exposure increase or broader live activation.
+
+## 2026-09-08 04:02 UTC — bounded scheduled review
+
+Completed interval 02:03–04:02 UTC, including 02:04 control repair handoff.
+Initial and pre-write git status clean. Read PILOT.md and last100 RUN_NOTES
+lines first. No older notes needed, no production edits/restarts, no test orders,
+no scheduler changes. Saved 20260908T040000Z-summary.json and -exchange.json.
+
+paper_report.py succeeded with no warnings. Broad/confirmed active since Sep7
+02:22:31/02:23:12, zero restarts: >25h continuous experiment achieved. Score,
+related, live/shadow pilots, standalone REST/WS and control active, zero
+restarts. Control warning journal failures end02:04:41 before repaired process
+start02:04:44; no later warning entries. Disk33G free,32% used. Score age1.1s,
+discovery39.5s. Broad capture36,008,697 bytes, messages5,083,878; interval logs
+show increasing messages through03:50 and MATCH OVER03:52:20, then zero
+watched matches/legs. Idle capture age464s is expected, not feed failure.
+Related capture254296->254550 bytes during review,27 markets/feed ready.
+Standalone WS133,961,454/orderbook2,079,715/trades2,612,687 bytes, ages4/6/3s;
+WS count40,520,636 at02:00 (prior review) ->43,741,836 at04:00. Two normal
+ticker-set reconnects02:10:40/02:35:42, no failed reconnect/sequence/API errors
+in interval file logs. Inspected65 broad/64 confirmed/3538 score/3 each pilot/
+26 REST/30 WS interval log rows, plus warning journals. Continuity verified
+by capture growth, fresh files and message counts; no whole-archive replay or
+exhaustive sequence audit. Standalone still labels Zverev/Darderi in play after
+primary completion (different discovery semantics), but continues recording;
+no demonstrated lost data or execution dependency on that label.
+
+No new broad, confirmed, live or shadow fills. Broad4 settlements: Khachanov
+QUAR YES27 +0.25; Tien tournament NO271 +4.34, SEMI NO114 +10.15, QUAR NO133
++2.48 (display-rounded). Exact durable totals33.619006 short +7.03 YES =
+40.649006, interval gain17.221011. Confirmed3 settlements: Khachanov YES27
++0.25, Tien QUAR NO5 +0.09 and tournament NO500 +4.65; exact total5.546640,
+interval gain4.996640. All broad/confirmed positions now empty; health and
+durable take counts/realized totals agree. Existing fee/depth-verified fills
+from preceding review now settled consistently with Tien loss/Khachanov win;
+no new fill requires depth replay. Synthetic run exclusions honored.
+Both observe Zverev3–0/Darderi0–3 at03:47:51; no new takes. Darderi one-cent
+signals have target no-bid/zero depth (confirmed initially awaits score).
+Gea target likewise no-bid. No demonstrated missed executable market or
+false-positive fill; complete draw census not repeated.
+
+Fresh signed fully paginated GET orders/fills/positions/settlements for all
+three live intent markets succeeded; historical cutoff and fresh <60s account
+watermark verified, no historical fetch needed for these September intents.
+Tien5 NO settled02:45:45.489855: revenue5.00, cost4.90, actual fee0.006900,
+net0.093100. Rybakina5 YES settlement revenue5/cost4.95/fee0.003500 remains
+consistent (net0.046500). Both exchange positions empty. Actual combined
+settled net0.139600 is supported by exchange, not paper fee estimates.
+Cerundolo not_found tombstone retained, orders/fills/positions/settlements
+all empty; fresh automatic absence recheck and no late evidence. All live
+reservations independently recomputed using rounded fee formula; retained
+allocation9.87/25, match4.96 and4.91 <=5 despite settlement. Shadow reservations
+also recomputed308.91/500, max match124.83/125. No unresolved, halt_reason,
+STOP or health error. No safety stop warranted. Live strategy/caps unchanged.
+Read-only assertions and GETs ran in a fresh Python process; no Ledger
+instantiation/save or production-state mutation. No code change warrants
+rerunning unchanged suites.
+
+Annual27 remain capture-only. Inspected cached Alcaraz KXGRANDSLAM-CALC26-2:
+active, unchanged July13 update, UUID527915ea-e368-4c7f-a203-c83ebb6f6572,
+explicit calendar2026 >=2 majors, expectedSep15/closeSep29 14:00Z, timer300s.
+Prior review records Alcaraz already won AO; USO can supply second title.
+Prior recorded AO/RG/Wimbledon winners and identity/rule caveats retained;
+no unchanged external rules/history refetched or new verification claimed.
+12 previously unverified identities and Sinner source re-fetch remain prior
+limitations; no annual promotion. Generic after-issuance rules and possible
+Jan7 cash lock must still be resolved before promotion.
+
+Handoff: keep all experiments running and live cumulative9.87 allocation
+charged; watch next matches and tombstone late-evidence monitor. No concrete
+execution/cap fault or new auth failure. Report/notes committed and push
+attempt follows; no production code changes.
