@@ -1295,3 +1295,18 @@ and each scheduled-review result still delivered. Tests add clean cutoff timing,
 failed scan reset, stale watermark, fractional position, fills/settlements,
 historical coverage, pagination failure and late-fill halt; combined suite run
 recorded below. Primary paper processes need no restart for these changes.
+
+### Bounded reconciliation deployed and live resumed
+
+37 combined unittests plus winner script checks passed. Committed/pushed34cca92
+before live restart. Actual CER FIN intent then completed three clean signed
+checks with fresh watermarks:0 current orders,0 recent fills,0 market positions,
+0 settlements; historical cutoffs July9 so September intent remains covered by
+current endpoints. Three checks span>=60s and intent age exceeds10m. Ledger now
+not_found with evidence retained. Cleared the specific ambiguity STOP after
+verifying no unresolved orders/halt_reason; resumed live under unchanged25/5
+cumulative caps. Only Rybakina4.96 allocation remains charged. No POST retried.
+Settlement evidence for live summary saved in
+ data/reviews/20260908T010800Z-live-settlement.json.
+Existing paper and shadow processes kept running. First live process restart
+loads the same durable ledger; changes do not erase losses or refill used budget.
