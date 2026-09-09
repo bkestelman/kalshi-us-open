@@ -1534,3 +1534,34 @@ Fresh isolated read-only Python assertions independently recomputed all pilot re
 Annual27 remain capture-only. Cached Alcaraz KXGRANDSLAM-CALC26-2 unchanged July13, explicit calendar2026 >=2, UUID527915ea-e368-4c7f-a203-c83ebb6f6572, expectedSep15/closeSep29 14:00Z,300s timer. Prior recorded verified AO title and major history carried forward: USO can supply second title, active status does not imply zero titles. No new external history/identity verification claimed. Prior12 identity gaps, Sinner source refetch, after-issuance interpretation and possible Jan7 settlement lock remain promotion blockers; no annual promotion.
 
 Evidence: data/reviews/20260908T120000Z-summary.json and -exchange.json. Handoff: preserve cumulative budgets, all experiments and tombstone late-evidence monitoring; next timer reviews next activity and first live subscription. Review records only committed/push follows; no fixes necessary.
+
+## 2026-09-09 — false-positive recovery replay
+
+Completed user-requested Zheng/Tiafoe and true-positive comparison. Reconstructed
+31,286,068 Sep5 messages and7,240,921 Sep7–8 primary messages, respecting34/22
+sequence/connection resets. Reusable bounded-depth tapes and cached quotes remain
+in data/research; report and full results are research/REVIVAL.md and
+research/revival_results.json.47 isolated tests pass. No live/paper entry changes,
+orders or service restarts in this research commit; caps remain250/50.
+
+23 covered winning entries (18 broad paper,5 live) across9 matches; Pegula predates
+capture. All fill-to-final-score intervals covered. 1/2/3/5-cent bid revival held
+5s would interrupt4/3/2/1 winning matches.10 cents held5s interrupts none and catches
+Zheng after902.201s. One comeback is not independent validation: threshold selected
+after viewing outcomes. Tiafoe minimum midpoint2.5%, never strict one-cent/no-bid.
+Zheng had no actual strategy fill; hypothetical100 NO@99c could exit at99c for14c
+fee loss, both at the early1c trigger and10c trigger. Match hedge becomes2c vs14c,
+so select recovery route by executable depth/fees, not an unbounded market sell.
+Rybakina's related YES exit bid was1c during revival: market liquidation would lose
+almost the entire position; a small match hedge would still cut a true winner's
+profit. Score lag does not veto these early false alarms.
+
+User asks to continue safeguard/recovery work. Next: isolated paper recovery path
+with sustained10c trigger, favorable-score veto, bounded exit/hedge comparison,
+durable intent/partial-fill handling; no live recovery enabled on this sample.
+
+00:00 scheduled review completed read-only while research files were dirty.
+Report data/reviews/20260909T000000Z-review.md: live lifetime net5.621300, allocation
+108.40/250, all5 fills settled, no unresolved. Broad52.329614, confirmed6.316640,
+flat. Transient standalone score429 and prune ENOENT logged; services healthy.
+Review had no production changes/commits. Evidence now referenced here for handoff.
