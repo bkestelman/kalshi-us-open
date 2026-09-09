@@ -1,0 +1,20 @@
+[Unit]
+Description=Paper-only tennis false-positive recovery comparison
+After=network-online.target winner-taker-paper.service tennis-scores.service
+Wants=network-online.target
+
+[Service]
+User=@USER@
+WorkingDirectory=@HOME@/kalshi-us-open
+Environment=KALSHI_DATA=@HOME@/kalshi-us-open/data/recovery_paper
+ExecStart=/usr/bin/python3 @HOME@/kalshi-us-open/recovery_paper.py
+Restart=on-failure
+RestartSec=30
+NoNewPrivileges=true
+InaccessiblePaths=@HOME@/trade-key @HOME@/trade-key-id @HOME@/gitkey
+ReadOnlyPaths=@HOME@/kalshi-us-open/data/live @HOME@/kalshi-us-open/data/pilot_live @HOME@/kalshi-us-open/data/pilot_paper
+StandardOutput=append:@HOME@/kalshi-us-open/data/recovery_paper/stdout.log
+StandardError=inherit
+
+[Install]
+WantedBy=multi-user.target

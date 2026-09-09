@@ -66,6 +66,17 @@ def report():
             warnings.append(name + ' error: ' + h['error'])
         if h.get('legs') and now-max(h.get('last_message_at', 0), h.get('started_at', 0)) > 180:
             warnings.append(name + ' watched markets but no feed messages for 180 seconds')
+    recovery_dir = os.path.join(os.path.dirname(OUT), 'recovery_paper')
+    recovery = read('recovery_health.json', recovery_dir)
+    if os.path.exists(os.path.join(recovery_dir, 'recovery_state.json')):
+        if not recovery or now-recovery.get('updated_at', 0)>60:
+            warnings.append('paper recovery heartbeat missing or stale')
+        if recovery.get('error'):
+            warnings.append('paper recovery error: '+recovery['error'])
+        if recovery.get('unprotected_alerts'):
+            warnings.append('paper recovery has unprotected remainder or unresolved simulated intent')
+        if recovery.get('legs') and now-max(recovery.get('last_message_at',0),recovery.get('started_at',0))>180:
+            warnings.append('paper recovery watched markets but no feed messages for 180 seconds')
     try:
         review_state = subprocess.run(['systemctl', 'show', 'paper-review.service',
                                        '--property=Result', '--value'],
@@ -111,7 +122,7 @@ def report():
     if shutil.disk_usage(OUT).free < 2 * 1024**3:
         warnings.append('less than 2 GiB disk free')
     return {'at': datetime.now(timezone.utc).isoformat(), 't': now,
-            'warnings': warnings, 'pilots': pilots, 'related_health': related, 'captures': captures, 'review_result': review_state, 'heartbeat_age_s': round(health_age, 1),
+            'warnings': warnings, 'pilots': pilots, 'recovery_paper': recovery, 'related_health': related, 'captures': captures, 'review_result': review_state, 'heartbeat_age_s': round(health_age, 1),
             'score_cache_age_s': round(score_age, 1), 'health': health,
             'today_action_counts': dict(counts),
             'confirmed_today_action_counts': dict(confirmed_counts),

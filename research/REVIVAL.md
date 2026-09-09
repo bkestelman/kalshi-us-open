@@ -149,3 +149,57 @@ Compressed tapes and detailed JSON remain on the VPS under `data/research/`.
 Use the saved tapes for parameter comparisons rather than repeatedly scanning
 large raw captures. This dated study intentionally uses September 7–8 paper
 journals; reusing the code for later studies requires updating that input selection.
+
+## Forward paper recovery implementation
+
+`recovery_policy.py` is transport-independent; `recovery_paper.py` follows new
+filled orders from `pilot_live` and `pilot_paper` in a separate process. It never
+submits exchange orders or writes to either source ledger. The systemd unit also
+hides trading/Git keys and mounts source-data directories read-only. Start time is
+durable: this is a forward comparison, not a fabricated replay of old fills.
+The broader model-edge paper strategy is not copied into this forward branch.
+
+The rule watches the **exact entry match book**, uses a monotonic five-second
+10-cent threshold, resets on invalid feed/new book objects, rejects crossed quotes,
+and vetoes recovery once a favorable mapped final score is available. An adverse
+confirmed result triggers evaluation immediately. A recovery trigger also marks
+subsequent entries in that source/match as hypothetically blocked.
+
+Candidate routes are a direct sale of the held related outcome, a hedge in the
+entry match market, and optionally the opposite player's match market. Direct
+sales have a floor **two cents below entry cost per contract**; hedges have a
+**20-cent maximum purchase price**. These are explicit research limits, not live
+orders or optimized parameters. Prefer maximum covered quantity, then the highest
+minimum combined proceeds after fees; no unbounded sweep or assumed passive fill.
+Fractional contract depth is handled to hundredths.
+
+Each intent is saved before the simulated 100-ms latency. Its original route,
+quantity and limit remain fixed. Paper fills require an active unsettled market,
+current WebSocket depth AND a subsequent REST depth check, the same valid match
+book generation, and remaining budget. Both sides of each order book have durable
+consumption accounting; reconnect snapshots cannot refill spent capacity.
+Live/shadow comparisons have independent capacity, never additive claimed fills.
+Partial/no fills get at most three intents with five-second retry spacing and
+consumption checks; missing bounded depth keeps an explicit unprotected state.
+A restart with an unfinished intent marks it interrupted and does not resubmit.
+
+The live-following branch respects the existing **$250 total/$50 match** caps;
+the shadow-following branch uses its existing $500/$125 caps. Source reservations
+(including unresolved orders) remain charged, plus hypothetical exit fees and
+hedge spend. Settlements do not recycle allocation. Later baseline entries that
+would breach the recovery branch's budget are recorded as hypothetically blocked.
+**A fully spent match cap can prevent a full hedge.** A future live design must
+reserve recovery capacity at entry or accept incomplete protection; doing so can
+reduce initial size on cap-constrained true winners. The paper branch exposes this
+tradeoff rather than silently increasing caps.
+
+Settled comparisons use actual market results for the held outcome and every
+hedge. Fee estimates are conservative rounded paper fees, so absolute baseline
+paper P&L may differ slightly from exchange-reported live P&L. The relevant measure
+is recovery-versus-hold difference within each independent source branch.
+
+Files: `data/recovery_paper/recovery_state.json`, `recovery_health.json`, and action
+journals. `paper_report.py` reports heartbeat, errors and unprotected/interrupted
+cases; existing minute monitoring and twelve-hour reviews cover the new branch.
+No live recovery has been enabled. The historical 10-cent separation remains a
+small, retrospectively selected sample and needs prospective evidence.

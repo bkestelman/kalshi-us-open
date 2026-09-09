@@ -1565,3 +1565,22 @@ Report data/reviews/20260909T000000Z-review.md: live lifetime net5.621300, alloc
 108.40/250, all5 fills settled, no unresolved. Broad52.329614, confirmed6.316640,
 flat. Transient standalone score429 and prune ENOENT logged; services healthy.
 Review had no production changes/commits. Evidence now referenced here for handoff.
+
+## 2026-09-09 — forward paper recovery implementation
+
+Implemented a separate read-only recovery comparison following new live/shadow
+pilot fills: recovery_policy.py, recovery_paper.py and tennis-recovery-paper.service.
+Pure same-book10c/5s trigger, favorable-score veto, adverse-final fallback; bounded
+2c-below-entry exits /20c maximum hedges, route comparison by coverage then worst
+proceeds after fees. Fractional depth,100ms delayed REST+WS checks, durable intents,
+both-ladder consumption, partial fills,3-attempt ceiling, restart interruption
+handling, actual-result settlement versus hold. Original source ledgers untouched.
+Source250/50 and500/125 caps remain binding with hypothetical recovery spend; no
+budget recycling. New entries that recovery would block are explicitly recorded.
+
+60 isolated tests passed, including reconnects, fractional partial fills, cheap
+Zheng exit vs hedge, rejection of bad exits, small hedge budgets, persistence,
+score veto, pending restart, settlement comparison and non-recycled budget. Added
+health/report/reviewer coverage. Dedicated unit hides trading/Git keys and mounts
+source data read-only. Installation/initial health verification follows; no live
+recovery or entry-strategy change is authorized by this paper experiment.
