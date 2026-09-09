@@ -1584,3 +1584,10 @@ score veto, pending restart, settlement comparison and non-recycled budget. Adde
 health/report/reviewer coverage. Dedicated unit hides trading/Git keys and mounts
 source data read-only. Installation/initial health verification follows; no live
 recovery or entry-strategy change is authorized by this paper experiment.
+
+Initial recovery startup stopped safely at fee validation: match series report
+quadratic_with_maker_fees (multiplier1), unlike related-series quadratic. Verified
+the official docs.kalshi.com/openapi.yaml description: both use the General Trading
+Fees Table for takers, with maker fees additional. Accepted the known maker-fee
+category for IOC simulations; all quoted taker-fee arithmetic remains unchanged.
+Added regression coverage; no hypothetical fills occurred before correction.

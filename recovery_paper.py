@@ -14,7 +14,7 @@ from discovery_feed import FollowerDiscovery
 from iolib import LIVE as OUT
 from kalshi import Book, get
 from paper_support import atomic_json
-from recovery_policy import Revival, adverse_quote, choose_plan, fee
+from recovery_policy import Revival, adverse_quote, choose_plan, fee, supported_fee_schedule
 from score_context import context
 from winner_taker import WinnerTaker
 
@@ -308,7 +308,7 @@ class RecoveryPaper(WinnerTaker):
         for series in ('KXATP','KXWTA','KXATPADVANCE','KXWTAADVANCE','KXATPMATCH','KXWTAMATCH'):
             data=await asyncio.to_thread(get,'/series/'+series)
             rule=(data or {}).get('series',{})
-            if rule.get('fee_type')!='quadratic' or float(rule.get('fee_multiplier',0))!=1:
+            if not supported_fee_schedule(rule):
                 raise RuntimeError('unverified recovery fee schedule: '+series)
         self.feed_enforced=True
         self.dirty=asyncio.Event()

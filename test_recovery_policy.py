@@ -8,7 +8,7 @@ import unittest
 from unittest.mock import patch
 
 from kalshi import Book
-from recovery_policy import Revival, choose_plan
+from recovery_policy import Revival, choose_plan, supported_fee_schedule
 from recovery_paper import Capacity, RecoveryPaper
 
 
@@ -23,6 +23,13 @@ def position(side='ask',quantity=100):
 
 
 class PolicyTests(unittest.TestCase):
+    def test_match_maker_fee_category_has_standard_taker_fee(self):
+        self.assertTrue(supported_fee_schedule({'fee_type':'quadratic_with_maker_fees','fee_multiplier':1}))
+        self.assertTrue(supported_fee_schedule({'fee_type':'quadratic','fee_multiplier':1}))
+        self.assertFalse(supported_fee_schedule({'fee_type':'quadratic','fee_multiplier':2}))
+        self.assertFalse(supported_fee_schedule({'fee_type':'flat','fee_multiplier':1}))
+        self.assertFalse(supported_fee_schedule({'fee_type':'quadratic','fee_multiplier':None}))
+
     def test_zheng_prefers_99c_exit_over_14c_hedge(self):
         p=position()
         plan=choose_plan(p,{'RELATED':book(no=[(.99,100)]),'MATCH-A':book([(.1,100)],[(.86,100)])},50)

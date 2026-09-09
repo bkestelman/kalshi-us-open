@@ -203,3 +203,12 @@ journals. `paper_report.py` reports heartbeat, errors and unprotected/interrupte
 cases; existing minute monitoring and twelve-hour reviews cover the new branch.
 No live recovery has been enabled. The historical 10-cent separation remains a
 small, retrospectively selected sample and needs prospective evidence.
+
+Fee preflight note: live API metadata reports KXATPMATCH/KXWTAMATCH as
+`quadratic_with_maker_fees`, multiplier1. Kalshi's [official OpenAPI
+schema](https://docs.kalshi.com/openapi.yaml) assigns that category the same general
+**taker** table as `quadratic`; maker fees are additional for resting orders. The
+recovery path only models IOC taker fills, so its fee numbers are unchanged.
+Startup validation accepts those two known categories at multiplier1 and rejects
+unknown schedules/rates. The initial overly narrow startup check stopped the new
+paper service before any hypothetical fills; it was corrected and regression-tested.

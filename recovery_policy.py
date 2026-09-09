@@ -7,6 +7,16 @@ MAX_HEDGE = .20
 MAX_EXIT_LOSS = .02  # Gross dollars per contract relative to entry, before fees.
 
 
+def supported_fee_schedule(rule):
+    # Both categories use the General Trading Fees Table for takers.
+    # Maker fees are irrelevant to this IOC-only paper path.
+    try:
+        return (rule.get('fee_type') in ('quadratic','quadratic_with_maker_fees')
+                and float(rule.get('fee_multiplier',0)) == 1)
+    except (TypeError,ValueError):
+        return False
+
+
 def fee(levels):
     value = sum((Decimal('.07') * Decimal(str(p)) * (1-Decimal(str(p))) *
                  Decimal(str(q)) for p, q in levels), Decimal(0))
