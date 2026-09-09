@@ -143,7 +143,8 @@ class RecoveryPaper(WinnerTaker):
         actual = self.books.get(ticker)
         if actual:
             for source in SOURCES:
-                self.capacity.observe(source,ticker,actual)
+                if ticker in self.capacity.state.get(source,{}):
+                    self.capacity.observe(source,ticker,actual)
         self.evaluate_recovery()
 
     def evaluate_recovery(self):
@@ -169,7 +170,10 @@ class RecoveryPaper(WinnerTaker):
             block = p['source']+':'+p['match']
             if block not in self.state['blocked']:
                 self.state['blocked'].append(block)
-            usable = {tk:self.capacity.book(p['source'],tk,b) for tk,b in self.books.items()}
+            relevant = {p['ticker'],p['match_ticker']} | {
+                tk for tk in self.books if tk.rsplit('-',1)[0]==p['match']}
+            usable = {tk:self.capacity.book(p['source'],tk,self.books[tk])
+                      for tk in relevant if tk in self.books}
             plan = choose_plan(p,usable,self.budget(p))
             if plan is None:
                 if p['status']!='no_depth':

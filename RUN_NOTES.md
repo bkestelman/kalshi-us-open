@@ -1591,3 +1591,14 @@ the official docs.kalshi.com/openapi.yaml description: both use the General Trad
 Fees Table for takers, with maker fees additional. Accepted the known maker-fee
 category for IOC simulations; all quoted taker-fee arithmetic remains unchanged.
 Added regression coverage; no hypothetical fills occurred before correction.
+
+Recovery deployment verified at02:26 UTC: new service active/feed_ready,16 tickers,
+12 related legs, zero errors and no adopted/fake old positions. Watching Pegula/
+Navarro and scheduled Shelton/Alcaraz. paper_report warnings empty. Trading service
+PID120901 unchanged; live allocation108.40/250, match cap50, unresolved0. Source
+ledgers mounted read-only by the recovery unit; no live restart or trade submitted.
+14 recovery tests pass after the fee-category correction (60-test full suite passed
+before that additional regression). Limited capacity tracking to actual recovery
+routes to avoid copying every ladder on every market tick while idle. Restarting
+only the new paper observer onto that small resource-use change; durable start
+cutoff retained. Existing review timer remains00:00/12:00 UTC.
