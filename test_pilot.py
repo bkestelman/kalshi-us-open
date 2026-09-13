@@ -86,14 +86,14 @@ class ExecutionTests(unittest.TestCase):
     def test_authorized_cap_increase_preserves_used_budget(self):
         row = self.ledger.prepare(c())
         self.ledger.accept(row, {'order_id':'old', 'fill_count':'5'}, terminal=True)
-        expanded = Ledger(self.path, total=250, per_match=50)
+        expanded = Ledger(self.path, total=1000, per_match=200)
         self.assertEqual(expanded.used(), reserve_cost('bid', .99, 5))
         for i in range(5):
             row=expanded.prepare(c(match='new'+str(i)))
             if row:
-                self.assertLessEqual(reserve_cost(row['side'],row['price'],row['count']),50)
+                self.assertLessEqual(reserve_cost(row['side'],row['price'],row['count']),200)
                 expanded.accept(row, {'order_id':str(i),'fill_count':str(row['count'])}, terminal=True)
-        self.assertLessEqual(expanded.used(),250)
+        self.assertLessEqual(expanded.used(),1000)
         self.assertIsNone(expanded.prepare(c(match='beyond')))
 
     def test_malformed_and_nonterminal_responses_keep_reservation(self):
@@ -251,6 +251,35 @@ class StrategyTests(unittest.TestCase):
         self.assertEqual(self.get()['side'],'ask')
         self.mb.yes={.01:1}
         self.assertIsNone(self.get())
+
+    def test_pegula_fractional_ask_does_not_hide_whole_contracts(self):
+        self.mb.yes={.99:100}
+        self.wb.no={.12:.79, .02:26, .01:2}
+        quote=self.get()
+        self.assertEqual((quote['side'],quote['price'],quote['quantity']),('bid',.99,28.79))
+        with tempfile.TemporaryDirectory() as tmp:
+            ledger=Ledger(Path(tmp)/'ledger.json',total=1000,per_match=200)
+            row=ledger.prepare(quote)
+            self.assertEqual(row['count'],28)
+            self.assertEqual(row['reserved'],'27.74')
+
+    def test_fractional_bid_does_not_hide_whole_contracts(self):
+        self.mb.no={.99:100}
+        self.wb.yes={.10:.79, .02:26, .01:2}
+        quote=self.get()
+        self.assertEqual((quote['side'],quote['price'],quote['quantity']),('ask',.01,28.79))
+
+    def test_depth_selection_preserves_price_bounds_and_whole_quantity(self):
+        self.mb.yes={.99:100}
+        for ladder in [{.12:.09, .02:.9}, {.16:10}, {0:10}]:
+            self.wb.no=ladder
+            self.assertIsNone(self.get())
+        self.wb.no={.12:2, .02:26}
+        self.assertEqual(self.get()['price'],.98)
+        self.mb.yes={}; self.mb.no={.99:100}
+        for ladder in [{.10:.09, .02:.9}, {.16:10}, {0:10}]:
+            self.wb.yes=ladder
+            self.assertIsNone(self.get())
 
     def test_score_contradiction_veto_and_no_already_secured_round(self):
         self.mb.no={.99:100}; self.wb.yes={.02:10}

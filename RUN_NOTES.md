@@ -1602,3 +1602,225 @@ before that additional regression). Limited capacity tracking to actual recovery
 routes to avoid copying every ladder on every market tick while idle. Restarting
 only the new paper observer onto that small resource-use change; durable start
 cutoff retained. Existing review timer remains00:00/12:00 UTC.
+
+## 2026-09-09 — user raises live caps to $200/$1000
+
+User explicitly authorized $200 per match and $1000 cumulative total, including
+fees and existing allocations. Updated live runner, CLI guard, service description,
+review scope and paper recovery source limits. Shadow stays $500/$125. Existing
+ledger retained; no budget reset or strategy change. 39 pilot/notification/recovery
+tests pass with the new cap expectations. Sandbox asynchronous tests stalled;
+isolated tests outside the sandbox completed. Restarted live and recovery observer;
+first live startup stopped on an account-orders read failure, then retried startup
+with all preflight checks retained. Final health verification follows.
+
+Verified fresh live health: PID138319, account/feed ready, caps1000/200,
+allocation108.40 retained,6 orders,0 unresolved and no error. Recovery observer
+also feed ready with no error.
+
+## 2026-09-09 — fix fractional top-level blockage
+
+User authorized fixing Pegula missed depth and restarting trader. Shared live/
+shadow candidate now scans price-priority levels for the best eligible quote
+with at least one whole contract, on both YES-buy and YES-sell paths. Quantity
+is limited to selected-level depth, keeping shadow verification compatible;
+existing price bounds, trigger, cumulative caps and retry policy remain.
+Regression recreates0.79@88c ahead of26@98c and verifies26-contract/$25.52
+reservation; mirrored sell-side, sub-unit-only, price-bound and best-price
+cases covered.42 pilot/notification/recovery tests pass. Restarted live and
+shadow services; existing ledgers backed up to /tmp before restart.
+
+Fresh health verified: live PID138841 and shadow PID138848, both feed/account
+ready, no errors/unresolved orders. Live108.40/1000 and200 per match; shadow
+499.55/500 and125 per match. All prior order counts/reservations/statuses
+verified preserved against pre-restart backups.
+
+## 2026-09-09 — interactive balance investigation and recovery release work
+
+User asked to fix/restart live if the insufficient-balance rejection was a bug,
+and prepare (but not deploy) live recovery using broader historical data.
+Signed read-only balance showed879.7488 total:99.8211 on exchange0 and779.9277
+on exchange3. Alcaraz tournament winner uses0; Shelton qualification uses3.
+The failed124-contract Alcaraz order reserved113.56, exceeding the currently
+observed exchange0 balance despite ample aggregate cash. The old sizing checked
+only cumulative budgets; startup checked aggregate cash. No balance snapshot was
+saved at rejection time, so today's split is corroborating rather than an exact
+historical balance measurement. Target balance allocations are empty; no resting
+orders at investigation. Evidence data/research/recovery-readonly-preflight.json.
+
+Fixed pilot.prepare_live: signed fresh cash by market exchange index, current
+market/entry signal recheck after reads, reservation bounded by shard cash and
+existing1000/200 caps. Missing/stale/nonfinite cash fails closed; cash-read errors
+are monitored. Regression124 NO@91c becomes109 contracts within99.8211; other
+exchange's cash does not contaminate sizing.45 pilot/cash/paper/notification
+checks passed before restart. Restarted only tennis-pilot-live at12:28:53 UTC,
+PID150357, account_ready, error/unresolved0, idle legs0. Backup ledger at
+/tmp/pilot-cash-fix-1788956933/pilot_ledger.json; all ten order reservations and
+statuses preserved, allocated127.04. No trades or cash transfers manually placed.
+
+Recovery work is staged in staged_recovery/, with shipped enabled=false and no
+service changes. Research cohort extraction ongoing from actual S3 bucket
+kalshi-tennis-411691564448 (the example kalshi-tennis-data name returned403).
+Inventory42 WS archives Jul30–Sep8, plus current localSep9. Actual release
+recommendation and final test/evidence counts will be recorded after review.
+
+Recovery review completed through21:40 UTC. Extracted485,534,143 messages across
+26 dates, Aug6–23/Sep2–9, into sequence-valid compact quote tapes. All extraction
+metadata nowvalidity_version2, including a correction that invalidates silence at
+last-message+30s; initial older outputs were regenerated. S3 source names,
+endpoints and tape SHA256 hashes: research/recovery_cohort_manifest.json.
+Current-day open gzip tail was handled explicitly, with complete records only;
+closed-day truncation is an error. Original cohortSep9 endpoint08:04; separate
+primary actual-fill tape extends21:31. Cached exchange outcomes yielded five
+additional wrong-signal matches beyond Zheng, six total; each distinct match is
+counted once, never twice for both market listings or repeated signal clusters.
+
+Actual-fill regression:48 entries located,47 fully covered across14 matches,
+including all9 live and8 shadow fills. One early broad-paper Pegula entry excluded
+for capture coverage.5c/60s and10c/5s both interrupt0 covered actual successes;
+5c/30s interrupts Swiatek/Zheng and5c/5s additionally Michelsen/Etcheverry. At5c/60s
+Zheng detected about6m13s earlier; hypothetical100 NO@99c exits at99c at100ms/500ms/
+1s arrival,14c total estimated fee loss. No actual false-signal fill asserted.
+
+Expanded quote-only validation:5c/60s flags8 eventual-winning matches on untouched
+dates versus7 for10c/5s, and both detect2 wrong-signal matches there. Development
+flags24 versus17 eventual winners and detects3 false matches; knownSep5/Sep7–8
+flags0 and detectsZheng. Older score-veto receipt times/related executable entries
+are unavailable, so these are signal stress cases, not realized recovery losses.
+Coverage/censoring denominators and full results are in research/RECOVERY_RELEASE.md
+and data/research/cohort_results.json. A zero-interference policy is not established;
+asked user whether occasional bounded-cost exits are acceptable rather than
+silently relaxing the stated successful-trade criterion. No need to wait for a
+new rare false positive to see this tradeoff; existing historical data shows it.
+
+Staged code (not enabled): shared durable ledger/caps and single-flight runner,
+reduce-only price-bounded exits, exact-match hedges capped20c, fresh shard cash/
+account watermark/exact owned position checks, final score/signal recheck after
+reads, fractional partial fills, restart/CID reconciliation, no POST retry,
+three-attempt ceiling, affected-match entry block, and monitor coverage. CLI
+requires existing pilot_live directory/lock plus explicit enabled configuration;
+shipped config remainsfalse. Legacy runner refuses recovery exit reservations
+instead of ignoring their costs on rollback. Existing paper recovery remains10c/5s
+and was not restarted.95 unittest tests and134 standalone winner assertions pass,
+including100 randomized budget/fraction scenarios. Logs /tmp/recovery-final-unittest.log
+and /tmp/recovery-final-winner-tests.log. GET-only preflight on a temporary copy of
+current ledger passed26 signed GETs, account_ready, unresolved0, allocation299.76
+conserved, no new orders and zero POSTs: data/research/staged-readonly-check.json.
+
+At21:30 live PID150357 remained active with fresh feed,13 orders,299.76/1000,
+200 per match, unresolved/error/cash_error0 and monitor warnings empty. New filled
+orders since morning exercised the new cash path (exchange3 cash recorded at
+preparation). No recovery deployment, manual trades, transfers, cap changes,
+service changes beyond the earlier cash-fix restart, agents, commits or pushes.
+Repository had pre-existing uncommitted interactive changes; all retained.
+
+
+## 2026-09-09 — sweep eligible depth in live and shadow pilot
+
+User requested fixing the single-level execution limitation after today's Gauff
+review. Shared candidate now retains all eligible levels, including fractional
+liquidity. Ledger evaluates price-priority prefixes, maximizes whole-contract
+quantity within existing cash/match/total/500-contract limits, and picks the
+tightest limit attaining that size. It retains worst-limit reservation for the
+whole IOC, including partial fills. Better-price affordability is preserved when
+an extra level would reduce the affordable count. Existing one-filled-order per
+market, signal checks, single-flight and reconciliation rules remain intact.
+
+Shadow uses one REST market/book pair, intersects depth with fresh WS per price,
+sweeps through the selected limit, and persists fractional execution quantities
+and levels. Tiny WS float accumulation artifacts are normalized at eight decimal
+places before contract sizing. Gauff regression requests39@99c from36.31@97c plus
+3.07@99c; delayed intersection reproduces9.38 potential shares with only6.31 left
+at97c. Mirrored NO, cash/caps, fractional aggregation, missing/disjoint REST,
+IOC wire body, pre-POST durability and restart/partial retention tested.
+89 relevant unittest checks pass; git diff --check clean.
+
+Stopped live/shadow while no unresolved orders; backed up ledgers to
+/tmp/pilot-depth-fix-1788990509 and restarted both at21:48:29 UTC. Fresh health:
+live PID159988 and shadow PID159990 account/feed ready, errors/unresolved0.
+All13 live and8 shadow prior order statuses/counts/prices/fills/reservations
+preserved. Allocations remain299.76/1000 live (200 per match) and499.55/500 shadow
+(125 per match). No manual orders, budget changes, recovery deployment, commits
+or pushes. Existing unrelated working-tree edits retained.
+
+## 2026-09-10 — parallel entries across related markets
+
+User requested comparing live/paper multi-market entries and fixing sequential
+submission. Read-only evidence in research/MULTI_MARKET_20260910.md and reproducible
+analyze_multi_market.py output data/research/multi_market_20260910.json. Live15
+intents:11 filled (10 full),2 zero,2 absent; two matches already had two filled
+markets. Several loser signals had no related bids. Alcaraz tournament/final bids
+coexisted during an unresolved live tournament order; Tien's earlier multiple
+paper markets were constrained live by the then-$5 cap. Median terminal latency
+69ms live/154ms shadow; shadow cap almost exhausted sinceSep8. Fill ratios84.33%
+live/94.37% shadow are descriptive, not comparable forecasts or safe overbooking.
+
+Implemented shared live/shadow match batches: both players/all available markets,
+parallel metadata plus one fresh shard balance, final signal check, equal-dollar
+allocation with shallow-book redistribution, worst-limit/full-fill reservations,
+all intents fsynced before any POST, eight workers, at least1s between batches.
+All responses must finish before gate reopens; any unresolved sibling blocks
+further batches. Partial allocations retained; total/match/shard caps unchanged.
+New batch IDs/candidate/allocation logs support subsequent evaluation. Staged
+recovery explicitly keeps its sequential position/recovery checks, remains off.
+Preserved unrelated pre-existing working-tree changes. No commits or pushes.
+
+107 relevant tests pass, including concurrency barriers, durable batch restart,
+full/partial/zero fill caps, save failure/no POST, missing shard isolation, signal
+and STOP rechecks, staged routing and100 randomized cases. Sandbox asyncio thread
+shutdown hung; rerun outside sandbox passed in1.781s with exchange mocks and
+isolated temporary ledgers. Log /tmp/pilot-batch-tests.log; diff check/compile pass.
+
+Activated live/shadow at12:59:18 UTC after confirming no legs/unresolved/errors.
+Stopped services, backed up ledgers to /tmp/pilot-batch-backup-1789045158, restarted.
+Live PID177714/shadow177715 account-ready, zero unresolved/errors; allocations
+409.74/1000 and499.55/500, per-match200/125. All15 live and8 shadow previous orders'
+identity/status/count/price/fill/reservation fields preserved. Startup verifier
+initially timed out waiting for feed_ready: expected on a fresh zero-leg process
+because ws_loop waits for discovery before connecting. Independently verified
+active services, fresh health, zero legs and paper_report warnings empty at13:00.
+No new trade yet, so actual simultaneous exchange fills remain to be observed.
+No manual orders, cap changes, account transfers or recovery activation.
+
+
+## 2026-09-13 — settlement recycling, budget renewal and reporting
+
+User authorized resetting budgets, recycling invested allocation on settlement,
+reporting improvements, and committing/pushing accumulated work. Recovery and
+latency work remain deferred; staged recovery stays disabled and unmodified.
+
+New pilot_accounting.py attributes live principal/actual fees to exact order IDs,
+checks filled quantity equality, deduplicates fills across historical/current
+storage, and uses signed settlement outcomes for payout. Missing/failed reads
+retain reservations and report accounting_error. Durable settlement records
+release full original reservations (including unused partial-fill headroom) from
+both configured caps; unsettled/unresolved orders retain full reservations.
+History, filled-market exclusion and absent-order tombstones remain intact.
+Profits do not raise caps. Existing exchange-shard cash checks remain binding.
+Shadow uses finalized outcomes and clearly labeled estimated costs/fees.
+
+Current values now live in gitignored data/pilot_live/pilot_config.json and
+pilot_paper/pilot_config.json. Startup requires explicit valid config; caps are
+not baked into Pilot or current README instructions. Legacy --cap overrides are
+rejected in favor of the local config. Reporting includes settled principal,
+fees, realized profit, outstanding and lifetime reservations, remaining budget,
+budget-exhaustion status and accounting failures. At less than the minimum
+eligible one-contract reservation, entry stops without repeated cash requests.
+
+116 relevant unittest checks pass, including historical fill attribution,
+incomplete pagination, losses, partial-fill/full-reservation release, restart,
+idempotency and disk-save failure retaining in-memory allocation. Standalone
+winner suite passes. Logs: /tmp/pilot-recycle-tests.log and
+/tmp/pilot-recycle-winner-tests.log. Diff whitespace check clean.
+
+GET-only preflight on temporary ledger copies reconciled all18 live and8 shadow
+filled orders. Stopped only live/shadow, backed up to
+/tmp/pilot-recycling-backup-1789258103, locked and migrated their ledgers, verified
+every pre-existing order field unchanged, recorded budget renewal audit entries,
+and restarted at00:08:24 UTC. Live PID221710 and shadow221711 account-ready;
+zero outstanding allocation, unresolved orders, accounting/cash errors or monitor
+warnings. Both full configured budgets available. No watched legs, so a fresh
+process correctly awaits discovery before opening its match websocket.
+Live18 settled orders retain967.0759 principal,1.3352 fees and18.8989 net profit;
+shadow8 settled orders estimate469.95 principal,1.09 fees and14.96 profit.
+No manual trades, transfers, recovery activation or latency changes.

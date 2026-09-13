@@ -1,5 +1,5 @@
 [Unit]
-Description=Tennis pilot shadow, identical strategy with $500 paper budget
+Description=Tennis pilot shadow, limits from local pilot_config.json
 After=network-online.target winner-taker-paper.service tennis-scores.service
 Wants=network-online.target
 

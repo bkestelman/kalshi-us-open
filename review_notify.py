@@ -57,7 +57,7 @@ def health_event(state, report, now):
         enqueue(state, 'health:'+str(int(now)),
                 'AUTOMATED PAPER HEALTH ALERT (user-authorized monitoring): '+ '; '.join(warnings)+
                 '. Inspect data/live/paper_report.json and current service/log state now, investigate and fix '
-                'within the documented $250-total/$50-per-match live pilot and paper scope, and post a brief update here. Coordinate with '
+                'within the local pilot_config.json limits and documented live pilot and paper scope, and post a brief update here. Coordinate with '
                 'any running paper-review.service before editing. Do not raise pilot caps or broaden live strategy.')
         state['health_sent_at'] = now
     elif previous and not warnings:

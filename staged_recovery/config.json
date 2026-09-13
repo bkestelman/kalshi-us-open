@@ -1,0 +1,6 @@
+{
+  "enabled": false,
+  "threshold": 0.05,
+  "persistence": 60,
+  "allow_hedges": true
+}

@@ -1,8 +1,8 @@
 # kalshi-us-open
 
 A user-authorized **live pilot** now runs alongside the paper experiments. See
-[PILOT.md](PILOT.md) for shared live/shadow strategy, cumulative $250 total/$50 per
-match limits, and the ten-minute-plus-three-check ambiguity cutoff. Minute
+[PILOT.md](PILOT.md) for shared live/shadow strategy, locally configured
+outstanding-capital limits, settlement recycling, and the ambiguity cutoff. Minute
 health checks continue; unchanged alert reminders are limited to once per12h.
 
 Current supervised paper run: [RUN_NOTES.md](RUN_NOTES.md). As of September 6,
@@ -12,7 +12,17 @@ the winner's newly secured qualification (e.g. Noskova QUAR YES), alongside the
 original loser shorts. Each research account has its own budget; their results
 must not be combined as though they share one capital cap.
 
-Run `python3 paper_report.py` for current health and account totals.
+Run `python3 paper_report.py` for current health, order-attributed settled profit,
+fees, remaining allocation, and budget-exhaustion warnings. Live uses exchange
+fills/fees; shadow results use estimated fees and remain separate.
+
+Each pilot reads `data/pilot_live/pilot_config.json` or
+`data/pilot_paper/pilot_config.json` at startup. These local, gitignored files
+contain `total_cap`, `per_match_cap`, and boolean `recycle_on_settlement`.
+There are no implicit production limits: missing/invalid configuration prevents
+startup. Keep authorized current values there, not in this README. Restart after
+an authorized config change. Settlements release reservations without deleting
+order history or increasing caps; unresolved orders retain their allocation.
 `tennis-scores.service` collects score changes; `paper-monitor.timer` records
 health once a minute. `winner-taker-confirmed-paper.service` runs the
 confirmation-only comparison in `data/confirmed/`, sharing the primary's

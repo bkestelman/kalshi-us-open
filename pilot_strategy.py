@@ -1,8 +1,22 @@
 """One book-decided candidate function used by both live and shadow pilot."""
 from score_context import context, future_round
 from qualifier_paper import secured_ticker
+from decimal import Decimal
+import math
 
 SERIES = {'KXATP', 'KXWTA', 'KXATPADVANCE', 'KXWTAADVANCE'}
+
+
+def executable_levels(book, side):
+    """Eligible YES-price limits in execution priority, including fractional depth."""
+    ladder = book.no if side == 'bid' else book.yes
+    levels = []
+    for level, quantity in sorted(ladder.items(), reverse=True):
+        price = round(1-level, 4) if side == 'bid' else level
+        eligible = .85 <= price < 1 if side == 'bid' else 0 < price <= .15
+        if eligible and math.isfinite(quantity) and quantity > 0:
+            levels.append([price, round(quantity, 8)])
+    return levels
 
 
 def candidate(owner, leg):
@@ -20,15 +34,17 @@ def candidate(owner, leg):
     side = None
     if mb.bid() is not None and mb.bid() >= .99 and mb.ask() is None:
         if score['state'] != 'lost' and secured_ticker(score['round'], leg.win_tk):
-            side, price, quantity = 'bid', wb.ask(), wb.no.get(round(1-wb.ask(), 4), 0) if wb.ask() else 0
+            side = 'bid'
     elif mb.bid() is None and mb.ask() is not None and mb.ask() <= .01:
         if score['state'] != 'won' and future_round(score['round'], leg.win_tk):
-            side, price, quantity = 'ask', wb.bid(), wb.bid_size()
-    if side is None or price is None or quantity < 1:
+            side = 'ask'
+    if side is None:
         return None
-    if (side == 'bid' and not .85 <= price < 1) or (side == 'ask' and not 0 < price <= .15):
+    levels = executable_levels(wb, side)
+    quantity = sum((Decimal(str(q)) for _, q in levels), Decimal(0))
+    if quantity < 1:
         return None
     return {'ticker': leg.win_tk, 'match': leg.match_tk.rsplit('-', 1)[0],
-            'match_ticker': leg.match_tk, 'side': side, 'price': price,
-            'quantity': quantity, 'score': score,
+            'match_ticker': leg.match_tk, 'side': side, 'price': levels[-1][0],
+            'quantity': float(quantity), 'levels': levels, 'score': score,
             'match_bid': mb.bid(), 'match_ask': mb.ask()}

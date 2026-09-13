@@ -1565,8 +1565,8 @@ def main():
     if args.mode == 'live':
         # The legacy live path does not reconcile ambiguous orders safely.
         # Route all CLI live launches through the shared, capped pilot runner.
-        if args.cap is not None and args.cap != 250:
-            ap.error('live pilot cap is fixed at $250')
+        if args.cap is not None:
+            ap.error('configure live limits in data/pilot_live/pilot_config.json')
         os.environ['KALSHI_DATA'] = os.path.join(os.path.dirname(__file__), 'data', 'pilot_live')
         os.execv(sys.executable, [sys.executable, os.path.join(os.path.dirname(__file__), 'pilot.py'), 'live'])
     bot = WinnerTaker(False)

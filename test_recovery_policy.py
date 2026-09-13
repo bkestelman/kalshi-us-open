@@ -147,11 +147,11 @@ class ExecutionTests(unittest.TestCase):
         self.assertAlmostEqual(self.p['pnl'],-.13)
         self.assertEqual(self.p['status'],'settled')
         # Settlement does not recycle the simulated hedge allocation.
-        self.assertAlmostEqual(self.bot.budget(self.p),49.83)
+        self.assertAlmostEqual(self.bot.budget(self.p),199.83)
 
     def test_no_live_budget_recycling_after_settlement(self):
         self.bot.ledgers['pilot_live']['orders']['old']={
-            'client_order_id':'old','status':'filled','reserved':'49.90','match':'MATCH'}
+            'client_order_id':'old','status':'filled','reserved':'199.90','match':'MATCH'}
         self.p['status']='settled'
         self.assertAlmostEqual(self.bot.budget(self.p),.10)
 

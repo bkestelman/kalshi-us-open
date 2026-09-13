@@ -62,10 +62,26 @@ def report():
             warnings.append(name + ' heartbeat missing or stale')
         if h.get('unresolved'):
             warnings.append(name + ' unresolved order; entries paused for reconciliation')
+        if h.get('budget_exhausted'):
+            warnings.append(name + ' budget exhausted; insufficient allocation for one eligible contract')
+        if h.get('accounting_error'):
+            warnings.append(name + ' settlement accounting: ' + h['accounting_error'])
+        if h.get('cash_error'):
+            warnings.append(name + ' cash check: ' + h['cash_error'])
         if h.get('error'):
             warnings.append(name + ' error: ' + h['error'])
         if h.get('legs') and now-max(h.get('last_message_at', 0), h.get('started_at', 0)) > 180:
             warnings.append(name + ' watched markets but no feed messages for 180 seconds')
+    live_recovery_dir = os.path.join(os.path.dirname(OUT), 'pilot_live')
+    live_recovery = read('live_recovery_health.json', live_recovery_dir)
+    if live_recovery.get('enabled'):
+        if now-live_recovery.get('updated_at',0)>60:
+            warnings.append('live recovery heartbeat missing or stale')
+        if live_recovery.get('error'):
+            warnings.append('live recovery error: '+live_recovery['error'])
+        if any(p.get('status') in ('partial','no_bounded_route','budget_or_attempt_limit','needs_review')
+               for p in live_recovery.get('positions',{}).values()):
+            warnings.append('live recovery has unprotected exposure requiring review')
     recovery_dir = os.path.join(os.path.dirname(OUT), 'recovery_paper')
     recovery = read('recovery_health.json', recovery_dir)
     if os.path.exists(os.path.join(recovery_dir, 'recovery_state.json')):

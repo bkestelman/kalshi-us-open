@@ -42,8 +42,30 @@ def reserve_cost(side, price, count):
     return n * (p if side == 'bid' else 1-p) + fee
 
 
+def exchange_cash(market, balance, now=None):
+    """Use only the market's shard; aggregate cash is not transferable liquidity."""
+    now = time.time() if now is None else now
+    index = market.get('exchange_index')
+    if type(index) is not int or index < 0:
+        raise ValueError('missing market exchange index')
+    stamp = balance.get('updated_ts')
+    if not isinstance(stamp, (int, float)) or not now-60 <= stamp <= now+5:
+        raise ValueError('stale exchange cash response')
+    rows = balance.get('balance_breakdown')
+    if not isinstance(rows, list):
+        raise ValueError('missing per-exchange balances')
+    matches = [r for r in rows if r.get('exchange_index') == index]
+    if len(matches) != 1:
+        raise ValueError('missing or duplicate exchange balance')
+    cash = D(matches[0]['balance'])
+    if not cash.is_finite() or cash < 0:
+        raise ValueError('invalid exchange cash')
+    return index, cash
+
+
 class Ledger:
-    def __init__(self, path, total=25, per_match=5):
+    def __init__(self, path, total=25, per_match=5, recycle=False):
+        self.recycle = recycle
         self.path = str(path)
         self.total, self.per_match = D(total), D(per_match)
         self.state = json.loads(Path(path).read_text()) if Path(path).exists() else {'version': 1, 'orders': {}}
@@ -58,6 +80,19 @@ class Ledger:
         if self.used() > self.total or any(self.used(o['match']) > self.per_match
                                           for o in self.state['orders'].values()):
             raise ValueError('ledger exceeds configured pilot budget')
+        for row in self.state['orders'].values():
+            if row.get('settlement'):
+                r = row['settlement']
+                values = [D(r[k]) for k in ('principal','fees','payout','net_profit')]
+                if (row['status'] != 'filled' or r.get('source') not in ('exchange','paper_estimate')
+                        or r.get('result') not in ('yes','no')
+                        or any(not x.is_finite() for x in values)
+                        or any(x < 0 for x in values[:3])
+                        or values[3] != values[2]-values[0]-values[1]
+                        or values[2] != (D(row['filled']) if r['result'] == ('yes' if row['side']=='bid' else 'no') else D(0))
+                        or not isinstance(r.get('verified_at'), (int,float))
+                        or (r['source']=='exchange' and not r.get('fill_ids'))):
+                    raise ValueError('invalid durable settlement')
         self.save()
 
     def save(self):
@@ -73,26 +108,109 @@ class Ledger:
         return [o for o in self.state['orders'].values() if o['status'] == 'unresolved']
 
     def used(self, match=None):
-        # Filled allocations are not recycled during this first pilot. Thus the
-        # lifetime total bounds loss even across settlement, restarts and wins.
+        # Unresolved and unsettled partial fills retain full worst-case allocation.
         return sum((D(o['reserved']) for o in self.state['orders'].values()
-                    if o['status'] not in ('no_fill', 'not_found') and (match is None or o['match'] == match)), D(0))
+                    if o['status'] not in ('no_fill', 'not_found')
+                    and not (getattr(self, 'recycle', False) and o.get('settlement'))
+                    and (match is None or o['match'] == match)), D(0))
 
-    def prepare(self, c):
+    def prepare(self, c, cash_limit=None):
         if self.unresolved() or self.state.get('halt_reason'):
             return None
         room = min(self.total-self.used(), self.per_match-self.used(c['match']))
-        n = min(int(c['quantity']), 500)
-        while n > 0 and reserve_cost(c['side'], c['price'], n) > room:
-            n -= 1
+        if cash_limit is not None:
+            cash_limit = D(cash_limit)
+            if not cash_limit.is_finite() or cash_limit < 0:
+                raise ValueError('invalid exchange cash limit')
+            room = min(room, cash_limit)
+        # Evaluate every price prefix: a deeper limit must not reduce the
+        # quantity affordable at a better level. Reserve all contracts at the
+        # selected worst price, so disappearing cheap depth cannot breach caps.
+        levels = c.get('levels', [[c['price'], c['quantity']]])
+        depth, n, price = D(0), 0, c['price']
+        for limit, quantity in levels:
+            depth += D(quantity)
+            count = min(int(depth), 500)
+            while count > n and reserve_cost(c['side'], limit, count) > room:
+                count -= 1
+            if count > n:
+                n, price = count, limit
         if n < 1:
             return None
         oid = PREFIX+str(uuid.uuid4())
-        row = dict(c, client_order_id=oid, count=n, status='unresolved', created_at=time.time(),
-                   reserved=str(reserve_cost(c['side'], c['price'], n)))
+        row = dict(c, price=price, client_order_id=oid, count=n, status='unresolved', created_at=time.time(),
+                   reserved=str(reserve_cost(c['side'], price, n)))
         self.state['orders'][oid] = row
         self.save()  # MUST precede the HTTP request; failure prevents submission.
         return row
+
+    def prepare_batch(self, candidates, cash_limits=None):
+        """Reserve one match atomically, sharing dollars across displayed depth.
+
+        Every IOC may fill in full. Never overbook based on average fill rates.
+        Existing unresolved orders block the entire batch, including after restart.
+        Call only from the event-loop owner, while reconciliation is excluded.
+        """
+        if self.unresolved() or self.state.get('halt_reason') or not candidates:
+            return []
+        if len({c['match'] for c in candidates}) != 1:
+            raise ValueError('batch must contain one match event')
+        if len({c['ticker'] for c in candidates}) != len(candidates):
+            raise ValueError('duplicate batch market')
+        blocked = {o['ticker'] for o in self.state['orders'].values()
+                   if o['status'] in ('filled', 'not_found')}
+        candidates = sorted((c for c in candidates if c['ticker'] not in blocked),
+                            key=lambda c: c['ticker'])
+        if not candidates:
+            return []
+        room = min(self.total-self.used(), self.per_match-self.used(candidates[0]['match']))
+        cash = None if cash_limits is None else {k: D(v) for k, v in cash_limits.items()}
+        if cash is not None and any(not v.is_finite() or v < 0 for v in cash.values()):
+            raise ValueError('invalid batch cash')
+        # Each count uses the tightest depth prefix supporting it. Increasing
+        # a limit reprices the WHOLE reservation, not just the added contract.
+        options = []
+        for c in candidates:
+            if cash is not None and c.get('exchange_index') not in cash:
+                raise ValueError('missing batch exchange cash')
+            choices, depth = [(D(0), c['price'])], D(0)
+            for price, quantity in c.get('levels', [[c['price'], c['quantity']]]):
+                depth += D(quantity)
+                while len(choices) <= min(int(depth), 500):
+                    choices.append((reserve_cost(c['side'], price, len(choices)), price))
+            options.append(choices)
+        counts = [0]*len(candidates)
+        # Discrete dollar water filling: small books receive their full size;
+        # constrained budgets are shared, independent of discovery iteration order.
+        while True:
+            eligible = []
+            for i, c in enumerate(candidates):
+                n = counts[i]
+                if n+1 >= len(options[i]):
+                    continue
+                cost = options[i][n+1][0]-options[i][n][0]
+                if cost <= room and (cash is None or cost <= cash[c['exchange_index']]):
+                    eligible.append((options[i][n][0], c['ticker'], i, cost))
+            if not eligible:
+                break
+            _, _, i, cost = min(eligible)
+            counts[i] += 1
+            room -= cost
+            if cash is not None:
+                cash[candidates[i]['exchange_index']] -= cost
+        batch_id, rows = str(uuid.uuid4()), []
+        for i, c in enumerate(candidates):
+            if not counts[i]:
+                continue
+            reserved, price = options[i][counts[i]]
+            oid = PREFIX+str(uuid.uuid4())
+            rows.append(dict(c, price=price, count=counts[i], reserved=str(reserved),
+                             client_order_id=oid, batch_id=batch_id, status='unresolved',
+                             created_at=time.time(), allocation_policy='displayed-depth-equal-dollars-v1'))
+        if rows:
+            self.state['orders'].update({r['client_order_id']: r for r in rows})
+            self.save()  # ALL intents durable before ANY POST; failure stops entry.
+        return rows
 
     def accept(self, row, response, terminal=False):
         o = response.get('order', response) if isinstance(response, dict) else {}

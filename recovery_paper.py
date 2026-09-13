@@ -20,7 +20,7 @@ from winner_taker import WinnerTaker
 
 ROOT = Path(__file__).parent
 SHARED = ROOT/'data/live'
-SOURCES = {'pilot_live': (250,50), 'pilot_paper': (500,125)}
+SOURCES = {'pilot_live': (1000,200), 'pilot_paper': (500,125)}
 
 
 class Capacity:
